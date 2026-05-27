@@ -1,21 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
 const STORAGE_KEYS = { recipes: "rb_recipes", plan: "rb_plan", extras: "rb_extras", skipped: "rb_skipped" };
-function loadData(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } }
-function saveData(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
-
-const SEED_RECIPES = [
-  { id:"r1", category:"spice-blends", emoji:"🌶️", name:"Smoky BBQ rub", time:"5 min", serves:8, ingredients:[{amount:"2 tbsp",item:"smoked paprika"},{amount:"1 tbsp",item:"brown sugar"},{amount:"1 tbsp",item:"ground cumin"},{amount:"1 tsp",item:"garlic powder"},{amount:"1 tsp",item:"onion powder"},{amount:"1 tsp",item:"mustard powder"},{amount:"1 tsp",item:"black pepper"},{amount:"1 tsp",item:"salt"},{amount:"¼ tsp",item:"cayenne pepper"}], steps:["Combine all spices in a small bowl and mix well.","Store in an airtight jar away from direct light.","Use 1–2 tbsp per 500g of meat, rubbed in at least 30 min before cooking."], notes:"Great on pork ribs, beef brisket, or chicken thighs. Keeps for 3 months.", source:"" },
-  { id:"r2", category:"mains", emoji:"🍝", name:"Pasta puttanesca", time:"30 min", serves:4, ingredients:[{amount:"400g",item:"spaghetti"},{amount:"4",item:"garlic cloves, sliced"},{amount:"1 tin",item:"anchovy fillets"},{amount:"400g tin",item:"crushed tomatoes"},{amount:"100g",item:"kalamata olives"},{amount:"2 tbsp",item:"capers"},{amount:"½ tsp",item:"chilli flakes"},{amount:"handful",item:"flat-leaf parsley"}], steps:["Cook spaghetti in well-salted boiling water until al dente.","Fry garlic and anchovies in olive oil until anchovies dissolve.","Add tomatoes, olives, capers and chilli. Simmer 10 minutes.","Toss drained pasta through the sauce. Finish with parsley."], notes:"Anchovies melt into the sauce — you won't taste them, just depth.", source:"" },
-  { id:"r8", category:"mains", emoji:"🍛", name:"Butter chicken", time:"45 min", serves:4, ingredients:[{amount:"700g",item:"chicken thighs, cut into chunks"},{amount:"1 tin",item:"crushed tomatoes"},{amount:"200ml",item:"thickened cream"},{amount:"1",item:"brown onion, diced"},{amount:"4",item:"garlic cloves, minced"},{amount:"1 tbsp",item:"fresh ginger, grated"},{amount:"2 tbsp",item:"butter"},{amount:"2 tsp",item:"garam masala"},{amount:"1 tsp",item:"ground cumin"},{amount:"1 tsp",item:"ground coriander"},{amount:"1 tsp",item:"smoked paprika"},{amount:"1 tsp",item:"sugar"},{amount:"to serve",item:"steamed rice"}], steps:["Fry onion in butter over medium heat until soft, about 8 min.","Add garlic, ginger and spices. Cook 2 minutes until fragrant.","Add tomatoes and sugar. Simmer 10 minutes.","Add chicken and cook through, about 12 minutes.","Stir in cream and simmer gently 5 minutes. Serve with rice."], notes:"Better the next day once the flavours develop. Freezes well.", source:"" },
-  { id:"r9", category:"mains", emoji:"🥗", name:"Roast veggie salad", time:"40 min", serves:4, ingredients:[{amount:"1",item:"sweet potato, cubed"},{amount:"1",item:"red capsicum, sliced"},{amount:"1",item:"zucchini, sliced"},{amount:"1 tin",item:"chickpeas, drained"},{amount:"100g",item:"feta cheese, crumbled"},{amount:"80g",item:"baby spinach"},{amount:"2 tbsp",item:"olive oil"},{amount:"1 tbsp",item:"balsamic vinegar"},{amount:"1 tsp",item:"smoked paprika"},{amount:"handful",item:"flat-leaf parsley"}], steps:["Preheat oven to 200°C. Toss sweet potato, capsicum and zucchini in olive oil and paprika.","Roast 25 minutes, adding chickpeas for the last 10 minutes.","Let cool slightly. Toss with spinach, feta and parsley.","Drizzle with balsamic and serve warm or at room temp."], notes:"Add a poached egg on top to make it more substantial.", source:"" },
-  { id:"r10", category:"mains", emoji:"🍜", name:"Thai green curry", time:"35 min", serves:4, ingredients:[{amount:"600g",item:"chicken breast, sliced"},{amount:"400ml tin",item:"coconut cream"},{amount:"2 tbsp",item:"green curry paste"},{amount:"1",item:"zucchini, sliced"},{amount:"1",item:"red capsicum, sliced"},{amount:"100g",item:"snow peas"},{amount:"2 tbsp",item:"fish sauce"},{amount:"1 tsp",item:"sugar"},{amount:"1",item:"lime, juiced"},{amount:"handful",item:"fresh basil leaves"},{amount:"to serve",item:"steamed jasmine rice"}], steps:["Fry curry paste in a little oil for 1 minute until fragrant.","Add coconut cream and bring to a gentle simmer.","Add chicken and cook 8 minutes.","Add vegetables and cook 5 minutes until just tender.","Season with fish sauce, sugar and lime. Finish with basil."], notes:"Don't boil the coconut cream hard or it splits. Keep it at a gentle bubble.", source:"" },
-  { id:"r3", category:"meat-times", emoji:"🥩", name:"Beef", time:"Reference", serves:1, ingredients:[], steps:[], rows:[{doneness:"Whole roast — rare",temp:"52–55°C",time:"20 min / 500g",oven:"220°C",rest:"20 min"},{doneness:"Whole roast — medium-rare",temp:"57–60°C",time:"25 min / 500g",oven:"200°C",rest:"20 min"},{doneness:"Whole roast — medium",temp:"63–68°C",time:"30 min / 500g",oven:"180°C",rest:"15 min"},{doneness:"Whole roast — well done",temp:"71°C+",time:"35 min / 500g",oven:"160°C",rest:"10 min"},{doneness:"Steak — rare",temp:"52–55°C",time:"2 min each side",oven:"High pan",rest:"5 min"},{doneness:"Steak — medium-rare",temp:"57–60°C",time:"3 min each side",oven:"High pan",rest:"5 min"},{doneness:"Steak — medium",temp:"63–68°C",time:"4 min each side",oven:"Med-high",rest:"5 min"},{doneness:"Brisket (low & slow)",temp:"93–96°C",time:"1.5 hrs / 500g",oven:"140°C",rest:"30 min"},{doneness:"Beef ribs (low & slow)",temp:"93°C+",time:"5–6 hrs total",oven:"135°C",rest:"20 min"},{doneness:"Beef mince",temp:"72°C",time:"4–5 min each side",oven:"Med pan",rest:"—"}], notes:"Always sear first. Pull meat 5°C below target — it rises while resting.", source:"" },
-  { id:"r5", category:"meat-times", emoji:"🍗", name:"Chicken", time:"Reference", serves:1, ingredients:[], steps:[], rows:[{doneness:"Whole chicken",temp:"75°C (thigh)",time:"20 min / 500g",oven:"200°C",rest:"15 min"},{doneness:"Breast (bone-in)",temp:"75°C",time:"35–40 min",oven:"190°C",rest:"5 min"},{doneness:"Breast (boneless)",temp:"75°C",time:"20–25 min",oven:"190°C",rest:"5 min"},{doneness:"Thighs (bone-in)",temp:"80°C",time:"40–45 min",oven:"200°C",rest:"5 min"},{doneness:"Thighs (boneless)",temp:"80°C",time:"25–30 min",oven:"200°C",rest:"5 min"},{doneness:"Drumsticks",temp:"80°C",time:"35–40 min",oven:"200°C",rest:"5 min"},{doneness:"Wings",temp:"80°C",time:"40–45 min",oven:"220°C",rest:"—"},{doneness:"Maryland",temp:"80°C",time:"45–50 min",oven:"200°C",rest:"5 min"},{doneness:"Spatchcock",temp:"75°C (thigh)",time:"45–55 min total",oven:"220°C",rest:"10 min"}], notes:"Chicken must always reach 75°C minimum. Juices should run clear.", source:"" },
-  { id:"r6", category:"meat-times", emoji:"🐑", name:"Lamb", time:"Reference", serves:1, ingredients:[], steps:[], rows:[{doneness:"Leg — rare",temp:"55–60°C",time:"20 min / 500g",oven:"220°C",rest:"15 min"},{doneness:"Leg — medium",temp:"65–70°C",time:"25 min / 500g",oven:"180°C",rest:"15 min"},{doneness:"Leg — well done",temp:"75°C+",time:"30 min / 500g",oven:"160°C",rest:"10 min"},{doneness:"Rack — rare",temp:"55–57°C",time:"20–25 min",oven:"200°C",rest:"10 min"},{doneness:"Rack — medium",temp:"63–65°C",time:"25–30 min",oven:"200°C",rest:"10 min"},{doneness:"Cutlets (pan)",temp:"70°C",time:"3 min each side",oven:"High pan",rest:"3 min"},{doneness:"Shoulder (slow)",temp:"90°C+",time:"4–5 hrs",oven:"160°C",rest:"20 min"},{doneness:"Shanks (braise)",temp:"Fall-off-bone",time:"2.5–3 hrs",oven:"160°C",rest:"—"}], notes:"Rack of lamb is best rare to medium-rare. Shoulder rewards patience.", source:"" },
-  { id:"r7", category:"meat-times", emoji:"🐷", name:"Pork", time:"Reference", serves:1, ingredients:[], steps:[], rows:[{doneness:"Whole roast (loin/leg)",temp:"63–65°C",time:"25 min / 500g",oven:"180°C",rest:"10 min"},{doneness:"Pork chops (pan)",temp:"63°C",time:"4 min each side",oven:"Med-high",rest:"5 min"},{doneness:"Pork belly (crackling)",temp:"75°C",time:"2–2.5 hrs",oven:"Start 240°C 20min, then 160°C",rest:"10 min"},{doneness:"Pork ribs (low & slow)",temp:"93°C+",time:"3–4 hrs",oven:"150°C",rest:"10 min"},{doneness:"Pulled pork (shoulder)",temp:"93–96°C",time:"2–2.5 hrs / 500g",oven:"150°C",rest:"30 min"},{doneness:"Sausages",temp:"72°C",time:"15–20 min",oven:"190°C or pan",rest:"—"},{doneness:"Ham (glazed)",temp:"60°C",time:"15 min / 500g",oven:"180°C",rest:"15 min"}], notes:"Pork is safe at 63°C (slightly pink). For crackling, skin must be dry and scored.", source:"" },
-  { id:"r4", category:"sweet-treats", emoji:"🍌", name:"Banana bread", time:"1h 10min", serves:8, ingredients:[{amount:"3",item:"very ripe bananas"},{amount:"80g",item:"butter, melted"},{amount:"150g",item:"brown sugar"},{amount:"2",item:"eggs"},{amount:"1 tsp",item:"vanilla extract"},{amount:"200g",item:"plain flour"},{amount:"1 tsp",item:"baking soda"},{amount:"pinch",item:"salt"}], steps:["Preheat oven to 175°C. Grease a loaf tin.","Mash bananas well. Stir in melted butter.","Mix in sugar, eggs and vanilla.","Fold in flour, baking soda and salt until just combined.","Pour into tin and bake 60–65 min until a skewer comes out clean.","Cool in tin 10 min, then turn out onto a rack."], notes:"The blacker the bananas, the sweeter and more flavourful the loaf.", source:"" },
-];
+function loadData(key: string) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } }
+function saveData(key: string, value: any) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 
 const CATEGORIES = [
   { id:"spice-blends", label:"Spice blends", emoji:"🌶️", color:"#B85C2A", bg:"#FBF0EB" },
@@ -23,19 +10,6 @@ const CATEGORIES = [
   { id:"mains",        label:"Mains",         emoji:"🍽️", color:"#4A8C5C", bg:"#EBF4EF" },
   { id:"sweet-treats", label:"Sweet treats",  emoji:"🍬", color:"#9B5B8A", bg:"#F5EBF3" },
 ];
-
-function getCat(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[2]; }
-function uid() { return Math.random().toString(36).slice(2, 10); }
-
-async function importFromUrl(url) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{ role:"user", content:`Extract the recipe from this URL and return ONLY a JSON object (no markdown) with: name, emoji, time, serves (number), category (one of: spice-blends, meat-times, mains, sweet-treats), ingredients (array of {amount, item}), steps (array of strings), notes. URL: ${url}` }] })
-  });
-  const data = await res.json();
-  const text = data.content?.map(b => b.text||"").join("") || "";
-  return JSON.parse(text.replace(/```json|```/g,"").trim());
-}
 
 const EMOJI_GROUPS = [
   { label:"Meat & fish",    emojis:["🥩","🍗","🍖","🥓","🌭","🐟","🦐","🦑","🦞","🦀","🍣","🥚","🍳"] },
@@ -46,89 +20,139 @@ const EMOJI_GROUPS = [
   { label:"Spices",         emojis:["🧂","🫙","🫚","🌶️","🌿","🍃","🌱","⭐","✨","🔥","💫"] },
 ];
 
+function getCat(id: string) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[2]; }
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+async function importFromUrl(url: string) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{ role:"user",
+      content:`Extract the recipe from this URL and return ONLY a JSON object (no markdown) with: name, emoji, time, serves (number), category (one of: spice-blends, meat-times, mains, sweet-treats), ingredients (array of {amount, item}), steps (array of strings), notes. URL: ${url}` }] })
+  });
+  const data = await res.json();
+  const text = data.content?.map((b: any) => b.text||"").join("") || "";
+  return JSON.parse(text.replace(/```json|```/g,"").trim());
+}
+
+function cleanIngredient(item: string) {
+  return item
+    .replace(/\(.*?\)/g, '')
+    .replace(/,.*$/, '')
+    .replace(/\b(diced|chopped|sliced|minced|grated|crushed|ground|beaten|melted|softened|peeled|halved|cubed|shredded|finely|roughly|thinly|lightly|bruised|deboned|boneless|divided|cooked|fried|roasted|blended|optional|separated|sifted|rinsed|drained|thawed|trimmed|washed)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function addAmounts(a: string, b: string) {
+  if (!a || a === b) return a;
+  if (!b) return a;
+  const UNITS = ['g','kg','ml','l','cup','cups','tsp','tbsp','tbs','oz','lb'];
+  function parse(str: string) {
+    const fracs: any = {'½':0.5,'¼':0.25,'¾':0.75,'⅓':0.333,'⅔':0.667,'⅛':0.125};
+    let clean = str.trim().toLowerCase();
+    for (const [f, v] of Object.entries(fracs)) clean = clean.replace(f as string, ` ${v} `);
+    const parts = clean.trim().split(/\s+/);
+    const nums: number[] = []; const units: string[] = [];
+    for (const p of parts) {
+      if (!isNaN(+p) && p !== '') nums.push(parseFloat(p));
+      else if (UNITS.includes(p)) units.push(p);
+    }
+    const num = nums.reduce((a,b) => a+b, 0);
+    const unit = units[0] || '';
+    return num > 0 ? { num, unit } : null;
+  }
+  const pa = parse(a); const pb = parse(b);
+  if (pa && pb && pa.unit === pb.unit) {
+    const total = pa.num + pb.num;
+    const fmtNum = (n: number) => {
+      if (n === Math.floor(n)) return String(n);
+      const fracs: [number,string][] = [[0.5,'½'],[0.25,'¼'],[0.75,'¾'],[0.333,'⅓'],[0.667,'⅔']];
+      const whole = Math.floor(n); const frac = n - whole;
+      for (const [v, sym] of fracs) if (Math.abs(frac - v) < 0.05) return whole > 0 ? `${whole}${sym}` : sym;
+      return n.toFixed(1);
+    };
+    return pa.unit ? `${fmtNum(total)} ${pa.unit}` : fmtNum(total);
+  }
+  if (a === b) return a;
+  return `${a} + ${b}`;
+}
+
 export default function App() {
-  const [recipes, setRecipes]           = useState(null);
-  const [plan, setPlan]                 = useState(null);
-  const [extraItems, setExtraItems]     = useState(null);
-  const [skipped, setSkipped]           = useState(null);
+  const [recipes, setRecipes]           = useState<any>(null);
+  const [plan, setPlan]                 = useState<any>(null);
+  const [extraItems, setExtraItems]     = useState<any>(null);
+  const [skipped, setSkipped]           = useState<any>(null);
   const [tab, setTab]                   = useState("cookbook");
   const [activeCat, setActiveCat]       = useState("mains");
-  const [view, setView]                 = useState(null);
-  const [checkedItems, setCheckedItems] = useState({});
+  const [view, setView]                 = useState<any>(null);
+  const [checkedItems, setCheckedItems] = useState<any>({});
   const [newExtra, setNewExtra]         = useState({name:"",amount:""});
   const [confirmReset, setConfirmReset] = useState(false);
   const [importing, setImporting]       = useState(false);
   const [importUrl, setImportUrl]       = useState("");
   const [importError, setImportError]   = useState("");
-  const extraRef = useRef(null);
-  const importRef = useRef(null);
+  const extraRef = useRef<any>(null);
+  const importRef = useRef<any>(null);
 
   function exportJSON() {
     const data = { recipes, plan, extras: extraItems, skipped, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "recipe-binder.json"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "recipe-binder.json"; a.click();
     URL.revokeObjectURL(url);
   }
 
   function exportGoogleDoc() {
-    const lines = ["MY RECIPE BINDER", `Exported ${new Date().toLocaleDateString("en-AU", {day:"numeric",month:"long",year:"numeric"})}`, ""];
+    const lines: string[] = ["MY RECIPE BINDER", `Exported ${new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"})}`, ""];
     CATEGORIES.forEach(cat => {
-      const recs = recipes.filter(r => r.category === cat.id);
+      const recs = recipes.filter((r: any) => r.category === cat.id);
       if (!recs.length) return;
       lines.push("════════════════════════════════", cat.label.toUpperCase(), "════════════════════════════════");
-      recs.forEach(rec => {
+      recs.forEach((rec: any) => {
         lines.push("", `${rec.emoji}  ${rec.name}`);
-        if (rec.time && rec.category !== "meat-times" && rec.category !== "spice-blends") lines.push(`${rec.time} · serves ${rec.serves}`);
         if (rec.category === "meat-times" && rec.rows?.length) {
-          lines.push("", "Cut / Doneness          Temp        Time              Oven       Rest", "─────────────────────────────────────────────────────────────────────");
-          rec.rows.forEach(row => lines.push(`${row.doneness.padEnd(24)}${row.temp.padEnd(12)}${row.time.padEnd(18)}${row.oven.padEnd(11)}${row.rest}`));
+          lines.push("", "Cut / Doneness          Temp        Time              Oven       Rest");
+          lines.push("─────────────────────────────────────────────────────────────────────");
+          rec.rows.forEach((row: any) => lines.push(`${row.doneness.padEnd(24)}${row.temp.padEnd(12)}${row.time.padEnd(18)}${row.oven.padEnd(11)}${row.rest}`));
         } else if (rec.ingredients?.length) {
           lines.push("", "Ingredients:");
-          rec.ingredients.forEach(ing => lines.push(`  • ${ing.amount}  ${ing.item}`));
+          rec.ingredients.forEach((ing: any) => lines.push(`  • ${ing.amount}  ${ing.item}`));
         }
-        if (rec.steps?.length) { lines.push("", "Method:"); rec.steps.forEach((s,i) => lines.push(`  ${i+1}. ${s}`)); }
+        if (rec.steps?.length) { lines.push("", "Method:"); rec.steps.forEach((s: string, i: number) => lines.push(`  ${i+1}. ${s}`)); }
         if (rec.notes) lines.push("", `Notes: ${rec.notes}`);
         lines.push("");
       });
     });
     const blob = new Blob([lines.join("\n")], { type:"text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "recipe-binder.txt"; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "recipe-binder.txt"; a.click();
     URL.revokeObjectURL(url);
   }
 
-  function handleImportJSON(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function handleImportJSON(e: any) {
+    const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev: any) => {
       try {
         const data = JSON.parse(ev.target.result);
         if (data.recipes) { setRecipes(data.recipes); saveData(STORAGE_KEYS.recipes, data.recipes); }
-        if (data.plan)    { setPlan(data.plan);       saveData(STORAGE_KEYS.plan, data.plan); }
+        if (data.plan)    { setPlan(data.plan); saveData(STORAGE_KEYS.plan, data.plan); }
         if (data.extras)  { setExtraItems(data.extras); saveData(STORAGE_KEYS.extras, data.extras); }
         if (data.skipped) { setSkipped(data.skipped); saveData(STORAGE_KEYS.skipped, data.skipped); }
         setView({ type:"importSuccess" });
       } catch { alert("Couldn't read that file."); }
     };
-    reader.readAsText(file);
-    e.target.value = "";
+    reader.readAsText(file); e.target.value = "";
   }
 
   useEffect(() => {
-    (() => {
-      const r = loadData(STORAGE_KEYS.recipes);
-      if (r) { const ids = new Set(r.map(x => x.id)); const missing = SEED_RECIPES.filter(s => !ids.has(s.id)); setRecipes(missing.length ? [...r, ...missing] : r); }
-      else setRecipes(SEED_RECIPES);
-      const p = loadData(STORAGE_KEYS.plan);
-      if (p && !Array.isArray(p)) setPlan([...new Set(Object.values(p).filter(Boolean))]);
-      else setPlan(p || []);
-      setExtraItems(loadData(STORAGE_KEYS.extras) || []);
-      setSkipped(loadData(STORAGE_KEYS.skipped) || []);
-    })();
+    const r = loadData(STORAGE_KEYS.recipes);
+    setRecipes(r || []);
+    const p = loadData(STORAGE_KEYS.plan);
+    if (p && !Array.isArray(p)) setPlan([...new Set(Object.values(p).filter(Boolean))]);
+    else setPlan(p || []);
+    setExtraItems(loadData(STORAGE_KEYS.extras) || []);
+    setSkipped(loadData(STORAGE_KEYS.skipped) || []);
   }, []);
 
   useEffect(() => { if (recipes)    saveData(STORAGE_KEYS.recipes, recipes); }, [recipes]);
@@ -142,32 +166,59 @@ export default function App() {
     </div>
   );
 
-  const catRecipes = recipes.filter(r => r.category === activeCat);
-  const viewedRecipe = view?.type === "recipe" ? recipes.find(r => r.id === view.id) : null;
-  const plannedIds = [...new Set(plan||[])];
-  const shopIngredients = plannedIds.flatMap(id => {
-    const rec = recipes.find(r => r.id === id);
-    return rec ? rec.ingredients.map((ing,idx) => ({...ing, recipeId:id, skipKey:`${id}-${idx}`})).filter(ing => !(skipped||[]).includes(ing.skipKey)) : [];
+  const catRecipes = recipes.filter((r: any) => r.category === activeCat);
+  const viewedRecipe = view?.type === "recipe" ? recipes.find((r: any) => r.id === view.id) : null;
+  const plannedIds = [...new Set(plan||[])] as string[];
+
+  const shopIngredients = plannedIds.flatMap((id: string) => {
+    const rec = recipes.find((r: any) => r.id === id);
+    return rec ? rec.ingredients.map((ing: any, idx: number) => ({
+      ...ing,
+      displayItem: cleanIngredient(ing.item),
+      recipeId: id,
+      skipKey: `${id}-${idx}`
+    })).filter((ing: any) => !(skipped||[]).includes(ing.skipKey)) : [];
   });
-  const grouped = {};
-  shopIngredients.forEach(ing => {
-    const base = ing.item.split(",")[0].toLowerCase().replace(/[^a-z]/g,"");
-    if (!grouped[base]) grouped[base] = {...ing, sources:[ing.recipeId]};
-    else if (!grouped[base].sources.includes(ing.recipeId)) grouped[base].sources.push(ing.recipeId);
+
+  const STOP_WORDS = new Set(['diced','chopped','sliced','minced','grated','crushed','ground',
+    'fresh','dried','frozen','cooked','raw','whole','large','small','medium','finely',
+    'roughly','thinly','bite','sized','cut','halved','cubed','shredded','peeled',
+    'optional','to','serve','taste','topped','sprigs','bunch','handful','pinch','can',
+    'tin','packet','jar','bottle','bag','head','clove','cloves','stalk','stalks',
+    'stick','sticks','ripe','lightly','bruised','deboned','boneless','stripped','mixed']);
+
+  const grouped: any = {};
+  shopIngredients.forEach((ing: any) => {
+    const base = (ing.displayItem || ing.item).toLowerCase()
+      .replace(/[^a-z\s]/g, '')
+      .split(/[\s,]+/)
+      .filter((w: string) => w.length > 2 && !STOP_WORDS.has(w))
+      .sort()
+      .join('');
+    if (!grouped[base]) {
+      grouped[base] = {...ing, item: ing.displayItem || ing.item, sources:[ing.recipeId]};
+    } else {
+      if (!grouped[base].sources.includes(ing.recipeId)) grouped[base].sources.push(ing.recipeId);
+      grouped[base].amount = addAmounts(grouped[base].amount, ing.amount);
+    }
   });
   const shopItems = Object.values(grouped);
 
-  function saveRecipe(rec) {
-    if (rec.id) setRecipes(p => p.map(r => r.id === rec.id ? rec : r));
-    else setRecipes(p => [...p, {...rec, id:uid()}]);
+  function saveRecipe(rec: any) {
+    if (rec.id) setRecipes((p: any) => p.map((r: any) => r.id === rec.id ? rec : r));
+    else setRecipes((p: any) => [...p, {...rec, id:uid()}]);
     setView(null);
   }
-  function deleteRecipe(id) { setRecipes(p => p.filter(r => r.id !== id)); setView(null); }
+  function deleteRecipe(id: string) { setRecipes((p: any) => p.filter((r: any) => r.id !== id)); setView(null); }
+
   async function handleImport() {
     if (!importUrl.trim()) return;
     setImporting(true); setImportError("");
-    try { const rec = await importFromUrl(importUrl.trim()); setImportUrl(""); setView({type:"editor", recipe:{...rec, id:null, source:importUrl.trim()}}); }
-    catch { setImportError("Couldn't import — try adding manually."); }
+    try {
+      const rec = await importFromUrl(importUrl.trim());
+      setImportUrl("");
+      setView({type:"editor", recipe:{...rec, id:null, source:importUrl.trim()}});
+    } catch { setImportError("Couldn't import — try adding manually."); }
     setImporting(false);
   }
 
@@ -197,7 +248,7 @@ export default function App() {
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:17,color:"#2a1f14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{viewedRecipe.emoji} {viewedRecipe.name}</div>
               <div style={{fontSize:11,color:"#8a7a6a",marginTop:1}}>
-                {!isMeat && !isSpice && <>{viewedRecipe.time} · serves {viewedRecipe.serves} · </>}
+                {!isMeat && !isSpice && <>{viewedRecipe.time} · </>}
                 <span style={{color:cat.color}}>{cat.label}</span>
               </div>
             </div>
@@ -205,7 +256,7 @@ export default function App() {
           <div style={{display:"flex",gap:8,padding:"0 16px 12px",overflowX:"auto"}}>
             {!isMeat && !isSpice && (
               <button style={{...S.pill,background:inPlan?"#e8f7f1":"#f0ebe5",color:inPlan?"#2aaa8a":"#3a7fcf",border:`1px solid ${inPlan?"#2aaa8a44":"#3a7fcf44"}`}}
-                onClick={() => inPlan ? setPlan(p=>p.filter(id=>id!==viewedRecipe.id)) : setPlan(p=>[...(p||[]),viewedRecipe.id])}>
+                onClick={() => inPlan ? setPlan((p: any) => p.filter((id: string) => id!==viewedRecipe.id)) : setPlan((p: any) => [...(p||[]),viewedRecipe.id])}>
                 {inPlan ? "✓ In plan" : "+ Add to plan"}
               </button>
             )}
@@ -220,12 +271,12 @@ export default function App() {
                 <div style={S.secLabel}>Times & temps</div>
                 <div style={{fontSize:11,color:"#8a7a6a"}}>Tick to add to shopping</div>
               </div>
-              {(viewedRecipe.rows||[]).map((row,i) => {
+              {(viewedRecipe.rows||[]).map((row: any,i: number) => {
                 const meatKey = `meat-${viewedRecipe.id}-${i}`;
-                const inList = (extraItems||[]).some(e => e.id === meatKey);
+                const inList = (extraItems||[]).some((e: any) => e.id === meatKey);
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"11px 12px",marginBottom:6,background:inList?"#f0fbf7":"#fff",borderRadius:10,border:`1px solid ${inList?"#2aaa8a33":"#f0ebe3"}`,cursor:"pointer"}}
-                    onClick={() => inList ? setExtraItems(p=>p.filter(e=>e.id!==meatKey)) : setExtraItems(p=>[...p,{id:meatKey,name:`${viewedRecipe.emoji} ${row.doneness}`,amount:""}])}>
+                    onClick={() => inList ? setExtraItems((p: any) => p.filter((e: any) => e.id!==meatKey)) : setExtraItems((p: any) => [...p,{id:meatKey,name:`${viewedRecipe.emoji} ${row.doneness}`,amount:""}])}>
                     <input type="checkbox" checked={inList} onChange={()=>{}} style={{accentColor:"#2aaa8a",flexShrink:0,width:18,height:18}} />
                     <div style={{flex:1}}>
                       <div style={{fontSize:13,fontWeight:500,color:inList?"#2aaa8a":"#2a1f14"}}>{row.doneness}</div>
@@ -242,16 +293,16 @@ export default function App() {
                 <div style={S.secLabel}>Ingredients</div>
                 <div style={{fontSize:11,color:"#8a7a6a"}}>{isSpice ? "Tick to add to shopping" : "Untick if you have it"}</div>
               </div>
-              {viewedRecipe.ingredients.map((ing,i) => {
+              {viewedRecipe.ingredients.map((ing: any,i: number) => {
                 const extraKey = `spice-${viewedRecipe.id}-${i}`;
                 const skipKey = `${viewedRecipe.id}-${i}`;
-                const spiceAdded = isSpice && (extraItems||[]).some(e=>e.id===extraKey);
+                const spiceAdded = isSpice && (extraItems||[]).some((e: any) => e.id===extraKey);
                 const isSkipped = !isSpice && (skipped||[]).includes(skipKey);
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:4,background:spiceAdded?"#f0fbf7":isSkipped?"#faf7f3":"#fff",borderRadius:8,border:"1px solid #f0ebe3",opacity:isSkipped?0.5:1,cursor:"pointer"}}
                     onClick={() => {
-                      if (isSpice) { if (spiceAdded) setExtraItems(p=>p.filter(e=>e.id!==extraKey)); else setExtraItems(p=>[...p,{id:extraKey,name:ing.item,amount:ing.amount}]); }
-                      else { if (isSkipped) setSkipped(p=>p.filter(k=>k!==skipKey)); else setSkipped(p=>[...p,skipKey]); }
+                      if (isSpice) { if (spiceAdded) setExtraItems((p: any) => p.filter((e: any) => e.id!==extraKey)); else setExtraItems((p: any) => [...p,{id:extraKey,name:ing.item,amount:ing.amount}]); }
+                      else { if (isSkipped) setSkipped((p: any) => p.filter((k: string) => k!==skipKey)); else setSkipped((p: any) => [...p,skipKey]); }
                     }}>
                     <input type="checkbox" checked={isSpice ? spiceAdded : !isSkipped} onChange={()=>{}} style={{accentColor:isSpice?"#2aaa8a":cat.color,flexShrink:0,width:18,height:18}} />
                     <div style={{flex:1}}><span style={{fontSize:13,color:spiceAdded?"#2aaa8a":isSkipped?"#aaa":"#2a1f14",textDecoration:isSkipped?"line-through":"none"}}>{ing.item}</span></div>
@@ -262,7 +313,7 @@ export default function App() {
               {!isSpice && viewedRecipe.steps.length > 0 && (
                 <>
                   <div style={{...S.secLabel,marginTop:20,marginBottom:10}}>Method</div>
-                  {viewedRecipe.steps.map((step,i) => (
+                  {viewedRecipe.steps.map((step: string,i: number) => (
                     <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #f5f0ea"}}>
                       <div style={{width:22,height:22,borderRadius:"50%",background:cat.bg,color:cat.color,fontSize:11,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</div>
                       <span style={{fontSize:13,color:"#3a2e24",lineHeight:1.7}}>{step}</span>
@@ -287,7 +338,7 @@ export default function App() {
       </div>
       <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:12}}>
         <div style={{fontSize:13,color:"#8a7a6a"}}>Paste a URL to import, or add one from scratch.</div>
-        <input style={S.input} placeholder="https://website.com/recipe…" value={importUrl} onChange={e=>setImportUrl(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleImport()} />
+        <input style={S.input} placeholder="https://website.com/recipe…" value={importUrl} onChange={(e: any) => setImportUrl(e.target.value)} onKeyDown={(e: any) => e.key==="Enter"&&handleImport()} />
         {importError && <div style={{fontSize:12,color:"#c0392b"}}>{importError}</div>}
         <button style={{...S.bigBtn,background:importing?"#e8e0d8":"#2a1f14",color:importing?"#8a7a6a":"#fff"}} onClick={handleImport} disabled={importing}>{importing ? "Importing…" : "Import from URL"}</button>
         <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0"}}><div style={{flex:1,height:1,background:"#e8e0d4"}}/><span style={{fontSize:12,color:"#aaa"}}>or</span><div style={{flex:1,height:1,background:"#e8e0d4"}}/></div>
@@ -315,7 +366,7 @@ export default function App() {
             </div>
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:8}}>
               {catRecipes.length === 0 && <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}><div style={{fontSize:36,marginBottom:8}}>📂</div>No {getCat(activeCat).label.toLowerCase()} yet</div>}
-              {catRecipes.map(rec => {
+              {catRecipes.map((rec: any) => {
                 const cat = getCat(rec.category);
                 const inPlan = (plan||[]).includes(rec.id);
                 return (
@@ -324,7 +375,7 @@ export default function App() {
                     <span style={{fontSize:26,flexShrink:0}}>{rec.emoji}</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"'Lora',serif",fontSize:14,color:"#2a1f14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rec.name}</div>
-                      <div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{rec.category!=="spice-blends"&&rec.category!=="meat-times" ? `${rec.time} · serves ${rec.serves}` : ""}</div>
+                      <div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{rec.category!=="spice-blends"&&rec.category!=="meat-times" ? rec.time : ""}</div>
                     </div>
                     {inPlan && <span style={{fontSize:11,color:cat.color,fontWeight:600,background:cat.bg,padding:"2px 8px",borderRadius:20,flexShrink:0}}>In plan</span>}
                     <span style={{color:"#ccc",fontSize:18}}>›</span>
@@ -344,7 +395,7 @@ export default function App() {
             <div style={{padding:"16px 16px 8px",display:"flex",justifyContent:"center"}}>
               {!confirmReset
                 ? <button style={{fontSize:11,color:"#ccc",background:"none",border:"none",cursor:"pointer"}} onClick={()=>setConfirmReset(true)}>↺ Reset to defaults</button>
-                : <div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:12,color:"#8a7a6a"}}>Wipe & reload?</span><button style={{...S.pill,background:"#c0392b",color:"#fff",border:"none"}} onClick={()=>{saveData(STORAGE_KEYS.recipes,SEED_RECIPES);setRecipes(SEED_RECIPES);setConfirmReset(false);}}>Yes</button><button style={{...S.pill,background:"#f0ebe5",color:"#5a4a3a",border:"none"}} onClick={()=>setConfirmReset(false)}>No</button></div>
+                : <div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:12,color:"#8a7a6a"}}>Wipe & reload?</span><button style={{...S.pill,background:"#c0392b",color:"#fff",border:"none"}} onClick={()=>{saveData(STORAGE_KEYS.recipes,[]);setRecipes([]);setConfirmReset(false);}}>Yes</button><button style={{...S.pill,background:"#f0ebe5",color:"#5a4a3a",border:"none"}} onClick={()=>setConfirmReset(false)}>No</button></div>
               }
             </div>
           </>
@@ -360,15 +411,15 @@ export default function App() {
             </div>
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:8}}>
               {(plan||[]).length===0 && <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}><div style={{fontSize:36,marginBottom:8}}>📅</div>No meals planned yet</div>}
-              {(plan||[]).map((recId,i) => {
-                const rec = recipes.find(r=>r.id===recId);
+              {(plan||[]).map((recId: string,i: number) => {
+                const rec = recipes.find((r: any) => r.id===recId);
                 if (!rec) return null;
                 const cat = getCat(rec.category);
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#fff",borderRadius:14,border:"1px solid #f0ebe3",borderLeft:`4px solid ${cat.color}`}}>
                     <span style={{fontSize:24}}>{rec.emoji}</span>
                     <div style={{flex:1,minWidth:0}}><div style={{fontFamily:"'Lora',serif",fontSize:14,color:"#2a1f14"}}>{rec.name}</div><div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{cat.label}{rec.time&&rec.category!=="meat-times"?` · ${rec.time}`:""}</div></div>
-                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:22,padding:"0 4px",lineHeight:1}} onClick={()=>setPlan(p=>p.filter((_,j)=>j!==i))}>×</button>
+                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:22,padding:"0 4px",lineHeight:1}} onClick={()=>setPlan((p: any) => p.filter((_: any,j: number)=>j!==i))}>×</button>
                   </div>
                 );
               })}
@@ -377,18 +428,18 @@ export default function App() {
         )}
         {tab === "plan" && view?.type === "planpicker" && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:50,display:"flex",alignItems:"flex-end"}} onClick={()=>setView(null)}>
-            <div style={{background:"#faf7f3",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"80vh",overflow:"auto",padding:"16px"}} onClick={e=>e.stopPropagation()}>
+            <div style={{background:"#faf7f3",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"80vh",overflow:"auto",padding:"16px"}} onClick={(e: any)=>e.stopPropagation()}>
               <div style={{width:36,height:4,background:"#d4c9bc",borderRadius:2,margin:"0 auto 16px"}}/>
               <div style={{fontFamily:"'Lora',serif",fontSize:17,color:"#2a1f14",marginBottom:14}}>Pick a meal</div>
               {CATEGORIES.filter(c=>c.id!=="meat-times").map(cat => {
-                const recs = recipes.filter(r=>r.category===cat.id);
+                const recs = recipes.filter((r: any) => r.category===cat.id);
                 if (!recs.length) return null;
                 return (
                   <div key={cat.id} style={{marginBottom:16}}>
                     <div style={{fontSize:11,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>{cat.label}</div>
-                    {recs.map(rec => (
+                    {recs.map((rec: any) => (
                       <div key={rec.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px",background:"#fff",borderRadius:10,border:"1px solid #f0ebe3",marginBottom:6,cursor:"pointer"}}
-                        onClick={()=>{setPlan(p=>[...(p||[]),rec.id]);setView(null);}}>
+                        onClick={()=>{setPlan((p: any)=>[...(p||[]),rec.id]);setView(null);}}>
                         <span style={{fontSize:20}}>{rec.emoji}</span>
                         <span style={{flex:1,fontSize:13,color:"#2a1f14"}}>{rec.name}</span>
                         <span style={{fontSize:11,color:"#8a7a6a"}}>{rec.time}</span>
@@ -408,32 +459,44 @@ export default function App() {
             </div>
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:6}}>
               {shopItems.length===0 && (extraItems||[]).length===0 && <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}><div style={{fontSize:36,marginBottom:8}}>🛒</div>Add meals to your plan first</div>}
-              {shopItems.map((item,i) => {
+              {shopItems.map((item: any,i: number) => {
                 const k = "r"+i;
                 return (
-                  <div key={k} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#fff",borderRadius:12,border:"1px solid #f0ebe3",cursor:"pointer",opacity:checkedItems[k]?0.4:1}} onClick={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))}>
+                  <div key={k} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#fff",borderRadius:12,border:"1px solid #f0ebe3",cursor:"pointer",opacity:checkedItems[k]?0.4:1}} onClick={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))}>
                     <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>{}} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} />
                     <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none"}}>{item.item}</span>
                     <span style={{fontSize:12,color:"#8a7a6a",marginRight:6}}>{item.amount}</span>
-                    <div style={{display:"flex",gap:3}}>{item.sources.map((srcId,j) => { const srcRec = recipes.find(r=>r.id===srcId); const c = srcRec ? getCat(srcRec.category) : {color:"#aaa"}; return <div key={j} style={{width:7,height:7,borderRadius:"50%",background:c.color}} title={srcRec?.name||""} />; })}</div>
+                    <div style={{display:"flex",gap:3}}>
+                      {item.sources.map((srcId: string,j: number) => {
+                        const srcRec = recipes.find((r: any) => r.id===srcId);
+                        const c = srcRec ? getCat(srcRec.category) : {color:"#aaa"};
+                        return <div key={j} style={{width:7,height:7,borderRadius:"50%",background:c.color}} title={srcRec?.name||""} />;
+                      })}
+                    </div>
                   </div>
                 );
               })}
-              {(extraItems||[]).map(item => {
+              {(extraItems||[]).map((item: any) => {
                 const k = "e"+item.id;
                 return (
                   <div key={k} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#fff",borderRadius:12,border:"1px solid #f0ebe3",opacity:checkedItems[k]?0.4:1}}>
-                    <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} onClick={e=>e.stopPropagation()} />
-                    <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none",cursor:"pointer"}} onClick={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))}>{item.name}</span>
+                    <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} onClick={(e: any)=>e.stopPropagation()} />
+                    <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none",cursor:"pointer"}} onClick={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))}>{item.name}</span>
                     <span style={{fontSize:12,color:"#8a7a6a",marginRight:4}}>{item.amount}</span>
-                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:0,lineHeight:1}} onClick={()=>setExtraItems(p=>p.filter(e=>e.id!==item.id))}>×</button>
+                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:0,lineHeight:1}} onClick={()=>setExtraItems((p: any)=>p.filter((e: any)=>e.id!==item.id))}>×</button>
                   </div>
                 );
               })}
               <div style={{display:"flex",gap:8,marginTop:8,paddingTop:14,borderTop:"1px dashed #e0d8ce"}}>
-                <input ref={extraRef} value={newExtra.name} onChange={e=>setNewExtra(p=>({...p,name:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}} placeholder="Add item…" style={{...S.input,flex:1}} />
-                <input value={newExtra.amount} onChange={e=>setNewExtra(p=>({...p,amount:e.target.value}))} onKeyDown={e=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}} placeholder="Qty" style={{...S.input,width:64}} />
-                <button style={{...S.pill,background:newExtra.name.trim()?"#2aaa8a":"#e8e0d8",color:newExtra.name.trim()?"#fff":"#bbb",border:"none",padding:"0 16px",flexShrink:0}} disabled={!newExtra.name.trim()} onClick={()=>{if(!newExtra.name.trim())return;setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});}}>Add</button>
+                <input ref={extraRef} value={newExtra.name} onChange={(e: any)=>setNewExtra(p=>({...p,name:e.target.value}))}
+                  onKeyDown={(e: any)=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
+                  placeholder="Add item…" style={{...S.input,flex:1}} />
+                <input value={newExtra.amount} onChange={(e: any)=>setNewExtra(p=>({...p,amount:e.target.value}))}
+                  onKeyDown={(e: any)=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
+                  placeholder="Qty" style={{...S.input,width:64}} />
+                <button style={{...S.pill,background:newExtra.name.trim()?"#2aaa8a":"#e8e0d8",color:newExtra.name.trim()?"#fff":"#bbb",border:"none",padding:"0 16px",flexShrink:0}}
+                  disabled={!newExtra.name.trim()}
+                  onClick={()=>{if(!newExtra.name.trim())return;setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});}}>Add</button>
               </div>
             </div>
           </>
@@ -441,7 +504,8 @@ export default function App() {
       </div>
       <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderTop:"1px solid #f0ebe3",display:"flex",zIndex:20,paddingBottom:"env(safe-area-inset-bottom)"}}>
         {[{id:"cookbook",label:"Cookbook",icon:"📖"},{id:"plan",label:"Plan",icon:"📅"},{id:"shopping",label:"Shopping",icon:"🛒"}].map(t => (
-          <button key={t.id} style={{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}} onClick={()=>{setTab(t.id);if(view?.type==="planpicker")setView(null);}}>
+          <button key={t.id} style={{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}
+            onClick={()=>{setTab(t.id);if(view?.type==="planpicker")setView(null);}}>
             <span style={{fontSize:20}}>{t.icon}</span>
             <span style={{fontSize:10,fontWeight:tab===t.id?700:400,color:tab===t.id?"#2a1f14":"#aaa",letterSpacing:"0.3px"}}>{t.label}</span>
             {tab===t.id && <div style={{width:16,height:2,background:"#C2714F",borderRadius:1,marginTop:1}}/>}
@@ -452,11 +516,11 @@ export default function App() {
   );
 }
 
-function Screen({children}) {
+function Screen({children}: any) {
   return <div style={{minHeight:"100vh",background:"#faf7f3",fontFamily:"'Crimson Pro',serif",display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",position:"relative"}}>{children}</div>;
 }
 
-function RecipeEditor({recipe, onSave, onCancel}) {
+function RecipeEditor({recipe, onSave, onCancel}: any) {
   const [form, setForm] = useState({
     id:recipe.id||null, name:recipe.name||"", emoji:recipe.emoji||"🍽️",
     category:recipe.category||"mains", time:recipe.time||"", serves:recipe.serves||2,
@@ -467,16 +531,16 @@ function RecipeEditor({recipe, onSave, onCancel}) {
   });
   const [showPicker, setShowPicker] = useState(false);
 
-  function f(k,v){setForm(p=>({...p,[k]:v}));}
-  function setIng(i,k,v){setForm(p=>{const a=[...p.ingredients];a[i]={...a[i],[k]:v};return{...p,ingredients:a};});}
-  function addIng(){setForm(p=>({...p,ingredients:[...p.ingredients,{amount:"",item:""}]}));}
-  function removeIng(i){setForm(p=>({...p,ingredients:p.ingredients.filter((_,j)=>j!==i)}));}
-  function setStep(i,v){setForm(p=>{const a=[...p.steps];a[i]=v;return{...p,steps:a};});}
-  function addStep(){setForm(p=>({...p,steps:[...p.steps,""]}));}
-  function removeStep(i){setForm(p=>({...p,steps:p.steps.filter((_,j)=>j!==i)}));}
-  function setRow(i,k,v){setForm(p=>{const a=[...p.rows];a[i]={...a[i],[k]:v};return{...p,rows:a};});}
-  function addRow(){setForm(p=>({...p,rows:[...p.rows,{doneness:"",temp:"",time:"",oven:"",rest:""}]}));}
-  function removeRow(i){setForm(p=>({...p,rows:p.rows.filter((_,j)=>j!==i)}));}
+  function f(k: string,v: any){setForm((p: any)=>({...p,[k]:v}));}
+  function setIng(i: number,k: string,v: any){setForm((p: any)=>{const a=[...p.ingredients];a[i]={...a[i],[k]:v};return{...p,ingredients:a};});}
+  function addIng(){setForm((p: any)=>({...p,ingredients:[...p.ingredients,{amount:"",item:""}]}));}
+  function removeIng(i: number){setForm((p: any)=>({...p,ingredients:p.ingredients.filter((_: any,j: number)=>j!==i)}));}
+  function setStep(i: number,v: string){setForm((p: any)=>{const a=[...p.steps];a[i]=v;return{...p,steps:a};});}
+  function addStep(){setForm((p: any)=>({...p,steps:[...p.steps,""]}));}
+  function removeStep(i: number){setForm((p: any)=>({...p,steps:p.steps.filter((_: any,j: number)=>j!==i)}));}
+  function setRow(i: number,k: string,v: any){setForm((p: any)=>{const a=[...p.rows];a[i]={...a[i],[k]:v};return{...p,rows:a};});}
+  function addRow(){setForm((p: any)=>({...p,rows:[...p.rows,{doneness:"",temp:"",time:"",oven:"",rest:""}]}));}
+  function removeRow(i: number){setForm((p: any)=>({...p,rows:p.rows.filter((_: any,j: number)=>j!==i)}));}
 
   const cat = getCat(form.category);
   const isMeat = form.category==="meat-times";
@@ -491,7 +555,7 @@ function RecipeEditor({recipe, onSave, onCancel}) {
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:16,paddingBottom:40}}>
         <div style={{display:"flex",gap:10,alignItems:"center",position:"relative"}}>
-          <button onClick={()=>setShowPicker(p=>!p)} style={{width:52,height:52,fontSize:26,background:"#fff",border:"1px solid #e0d8ce",borderRadius:12,cursor:"pointer",flexShrink:0}}>{form.emoji}</button>
+          <button onClick={()=>setShowPicker((p: any)=>!p)} style={{width:52,height:52,fontSize:26,background:"#fff",border:"1px solid #e0d8ce",borderRadius:12,cursor:"pointer",flexShrink:0}}>{form.emoji}</button>
           {showPicker && (
             <div style={{position:"absolute",top:58,left:0,zIndex:100,background:"#fff",border:"1px solid #e0d8ce",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.12)",width:280,maxHeight:300,overflowY:"auto",padding:12}}>
               {EMOJI_GROUPS.map(g=>(
@@ -503,29 +567,29 @@ function RecipeEditor({recipe, onSave, onCancel}) {
                 </div>
               ))}
               <div style={{borderTop:"1px solid #f0ebe3",paddingTop:8}}>
-                <input value={form.emoji} onChange={e=>f("emoji",e.target.value)} maxLength={2} style={{...S.input,textAlign:"center",fontSize:20}} placeholder="✏️"/>
+                <input value={form.emoji} onChange={(e: any)=>f("emoji",e.target.value)} maxLength={2} style={{...S.input,textAlign:"center",fontSize:20}} placeholder="✏️"/>
               </div>
             </div>
           )}
-          <input value={form.name} onChange={e=>f("name",e.target.value)} placeholder="Recipe name" style={{...S.input,flex:1,fontFamily:"'Lora',serif",fontSize:16}}/>
+          <input value={form.name} onChange={(e: any)=>f("name",e.target.value)} placeholder="Recipe name" style={{...S.input,flex:1,fontFamily:"'Lora',serif",fontSize:16}}/>
         </div>
         <div style={{display:"flex",gap:8}}>
-          <div style={{flex:1.5}}><div style={S.fieldLabel}>Category</div><select value={form.category} onChange={e=>f("category",e.target.value)} style={S.input}>{CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></div>
-          {!isMeat&&!isSpice&&<div style={{flex:1}}><div style={S.fieldLabel}>Time</div><input value={form.time} onChange={e=>f("time",e.target.value)} placeholder="30 min" style={S.input}/></div>}
-          {!isMeat&&!isSpice&&<div style={{width:64}}><div style={S.fieldLabel}>Serves</div><input type="number" min={1} value={form.serves} onChange={e=>f("serves",+e.target.value)} style={S.input}/></div>}
+          <div style={{flex:1.5}}><div style={S.fieldLabel}>Category</div><select value={form.category} onChange={(e: any)=>f("category",e.target.value)} style={S.input}>{CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></div>
+          {!isMeat&&!isSpice&&<div style={{flex:1}}><div style={S.fieldLabel}>Time</div><input value={form.time} onChange={(e: any)=>f("time",e.target.value)} placeholder="30 min" style={S.input}/></div>}
+          {!isMeat&&!isSpice&&<div style={{width:64}}><div style={S.fieldLabel}>Serves</div><input type="number" min={1} value={form.serves} onChange={(e: any)=>f("serves",+e.target.value)} style={S.input}/></div>}
         </div>
         {isMeat ? (
           <div>
             <div style={S.secLabel}>Time & temp rows</div>
-            {form.rows.map((row,i)=>(
+            {form.rows.map((row: any,i: number)=>(
               <div key={i} style={{display:"flex",gap:6,marginBottom:8,alignItems:"center"}}>
                 <div style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
-                  <input value={row.doneness} onChange={e=>setRow(i,"doneness",e.target.value)} placeholder="Cut / doneness" style={S.input}/>
+                  <input value={row.doneness} onChange={(e: any)=>setRow(i,"doneness",e.target.value)} placeholder="Cut / doneness" style={S.input}/>
                   <div style={{display:"flex",gap:4}}>
-                    <input value={row.temp} onChange={e=>setRow(i,"temp",e.target.value)} placeholder="Temp" style={{...S.input,flex:1}}/>
-                    <input value={row.time} onChange={e=>setRow(i,"time",e.target.value)} placeholder="Time" style={{...S.input,flex:1}}/>
-                    <input value={row.oven} onChange={e=>setRow(i,"oven",e.target.value)} placeholder="Oven" style={{...S.input,flex:1}}/>
-                    <input value={row.rest} onChange={e=>setRow(i,"rest",e.target.value)} placeholder="Rest" style={{...S.input,flex:1}}/>
+                    <input value={row.temp} onChange={(e: any)=>setRow(i,"temp",e.target.value)} placeholder="Temp" style={{...S.input,flex:1}}/>
+                    <input value={row.time} onChange={(e: any)=>setRow(i,"time",e.target.value)} placeholder="Time" style={{...S.input,flex:1}}/>
+                    <input value={row.oven} onChange={(e: any)=>setRow(i,"oven",e.target.value)} placeholder="Oven" style={{...S.input,flex:1}}/>
+                    <input value={row.rest} onChange={(e: any)=>setRow(i,"rest",e.target.value)} placeholder="Rest" style={{...S.input,flex:1}}/>
                   </div>
                 </div>
                 <button style={S.removeBtn} onClick={()=>removeRow(i)}>×</button>
@@ -536,10 +600,10 @@ function RecipeEditor({recipe, onSave, onCancel}) {
         ) : (
           <div>
             <div style={S.secLabel}>Ingredients</div>
-            {form.ingredients.map((ing,i)=>(
+            {form.ingredients.map((ing: any,i: number)=>(
               <div key={i} style={{display:"flex",gap:8,marginBottom:8}}>
-                <input value={ing.amount} onChange={e=>setIng(i,"amount",e.target.value)} placeholder="Amount" style={{...S.input,width:80}}/>
-                <input value={ing.item} onChange={e=>setIng(i,"item",e.target.value)} placeholder="Ingredient" style={{...S.input,flex:1}}/>
+                <input value={ing.amount} onChange={(e: any)=>setIng(i,"amount",e.target.value)} placeholder="Amount" style={{...S.input,width:80}}/>
+                <input value={ing.item} onChange={(e: any)=>setIng(i,"item",e.target.value)} placeholder="Ingredient" style={{...S.input,flex:1}}/>
                 <button style={S.removeBtn} onClick={()=>removeIng(i)}>×</button>
               </div>
             ))}
@@ -549,17 +613,17 @@ function RecipeEditor({recipe, onSave, onCancel}) {
         {!isSpice&&!isMeat&&(
           <div>
             <div style={S.secLabel}>Method</div>
-            {form.steps.map((step,i)=>(
+            {form.steps.map((step: string,i: number)=>(
               <div key={i} style={{display:"flex",gap:8,marginBottom:8,alignItems:"flex-start"}}>
                 <div style={{width:22,height:22,borderRadius:"50%",background:cat.bg,color:cat.color,fontSize:11,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:8}}>{i+1}</div>
-                <textarea value={step} onChange={e=>setStep(i,e.target.value)} placeholder={`Step ${i+1}`} style={{...S.input,flex:1,minHeight:52,resize:"vertical"}}/>
+                <textarea value={step} onChange={(e: any)=>setStep(i,e.target.value)} placeholder={`Step ${i+1}`} style={{...S.input,flex:1,minHeight:52,resize:"vertical"}}/>
                 <button style={{...S.removeBtn,marginTop:8}} onClick={()=>removeStep(i)}>×</button>
               </div>
             ))}
             <button style={S.ghostBtn} onClick={addStep}>+ Add step</button>
           </div>
         )}
-        <div><div style={S.fieldLabel}>Notes</div><textarea value={form.notes} onChange={e=>f("notes",e.target.value)} placeholder="Tips or variations…" style={{...S.input,width:"100%",minHeight:70,resize:"vertical"}}/></div>
+        <div><div style={S.fieldLabel}>Notes</div><textarea value={form.notes} onChange={(e: any)=>f("notes",e.target.value)} placeholder="Tips or variations…" style={{...S.input,width:"100%",minHeight:70,resize:"vertical"}}/></div>
       </div>
     </div>
   );
