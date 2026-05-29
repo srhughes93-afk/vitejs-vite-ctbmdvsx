@@ -4,18 +4,12 @@ const STORAGE_KEYS = { recipes: "rb_recipes", plan: "rb_plan", extras: "rb_extra
 function loadData(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } }
 function saveData(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
 
-const SEED_RECIPES = [
-  { id:"r1", category:"spice-blends", emoji:"🌶️", name:"Smoky BBQ Rub", time:"5 min", serves:8,
-    ingredients:[{amount:"2 tbsp",item:"smoked paprika"},{amount:"1 tbsp",item:"brown sugar"},{amount:"1 tbsp",item:"ground cumin"},{amount:"1 tsp",item:"garlic powder"},{amount:"1 tsp",item:"onion powder"},{amount:"1 tsp",item:"mustard powder"},{amount:"1 tsp",item:"black pepper"},{amount:"1 tsp",item:"salt"},{amount:"¼ tsp",item:"cayenne pepper"}],
-    steps:["Combine all spices in a small bowl and mix well.","Store in an airtight jar away from direct light.","Use 1–2 tbsp per 500g of meat, rubbed in at least 30 min before cooking."],
-    notes:"Great on pork ribs, beef brisket, or chicken thighs. Keeps for 3 months.", source:"" },
-];
-
 const CATEGORIES = [
   { id:"spice-blends", label:"Spice blends",  emoji:"🌶️", color:"#B85C2A", bg:"#FBF0EB" },
   { id:"meat-times",   label:"Meat times",    emoji:"🥩", color:"#8B3A3A", bg:"#F8EDED" },
   { id:"breakfast",    label:"Breakfast",     emoji:"🍳", color:"#C2852A", bg:"#FDF3E3" },
   { id:"mains",        label:"Mains",         emoji:"🍽️", color:"#4A8C5C", bg:"#EBF4EF" },
+  { id:"baking",       label:"Baking",        emoji:"🍞", color:"#7A6A3E", bg:"#F5F0E3" },
   { id:"sweet-treats", label:"Sweet treats",  emoji:"🍬", color:"#9B5B8A", bg:"#F5EBF3" },
 ];
 
@@ -32,8 +26,8 @@ const SHOP_CATS = [
   { id:"meat",    label:"Meat & Fish",        emoji:"🥩", keywords:["chicken","beef","pork","lamb","mince","steak","bacon","sausage","fish","prawn","shrimp","squid","salmon","tuna","fillet","thigh","breast","brisket","ribs","turkey","duck","anchovy","seafood"] },
   { id:"produce", label:"Fruit & Veg",         emoji:"🥦", keywords:["onion","garlic","ginger","tomato","capsicum","carrot","celery","zucchini","broccoli","spinach","kale","potato","pumpkin","eggplant","mushroom","cabbage","leek","beetroot","corn","pea","bean","avocado","lemon","lime","orange","apple","banana","mango","pineapple","parsley","coriander","basil","rosemary","thyme","mint","dill","chilli","spring onion","shallot","bok choy","cauliflower","sweet potato"] },
   { id:"tins",    label:"Tins & Jars",         emoji:"🥫", keywords:["tin","canned","crushed tomato","diced tomato","whole tomato","coconut milk","coconut cream","kidney bean","butter bean","chickpea","lentil","passata","tomato paste","curry paste","gochujang","miso","oyster sauce","fish sauce","soy","hoisin","tahini","peanut butter","stock cube","chutney","capers","olive"] },
-  { id:"dry",     label:"Dry Goods",           emoji:"🌾", keywords:["pasta","spaghetti","rice","flour","couscous","noodle","risoni","risotto","lentil","oat","bread","crumb","panko","cornstarch","baking powder","baking soda","sugar","salt","pepper","yeast","almond meal"] },
-  { id:"dairy",   label:"Dairy & Eggs",        emoji:"🧀", keywords:["butter","cream","milk","cheese","parmesan","ricotta","yoghurt","yogurt","egg","feta","haloumi","halloumi","ghee","cream cheese","sour cream"] },
+  { id:"dry",     label:"Dry Goods",           emoji:"🌾", keywords:["pasta","spaghetti","rice","flour","couscous","noodle","risoni","risotto","lentil","oat","bread","crumb","panko","cornstarch","baking powder","baking soda","sugar","salt","pepper","yeast","almond meal","cornmeal"] },
+  { id:"dairy",   label:"Dairy & Eggs",        emoji:"🧀", keywords:["butter","cream","milk","cheese","parmesan","ricotta","yoghurt","yogurt","egg","feta","haloumi","halloumi","ghee","cream cheese","sour cream","buttermilk"] },
   { id:"sauces",  label:"Sauces & Condiments", emoji:"🫙", keywords:["oil","vinegar","sauce","stock","broth","wine","honey","molasse","worcestershire","tabasco","mustard","mayo","ketchup","sriracha","mango chutney","relish"] },
   { id:"spices",  label:"Spices",              emoji:"🌿", keywords:["paprika","cumin","coriander","turmeric","garam masala","cinnamon","nutmeg","cardamom","clove","fennel","allspice","cayenne","chilli powder","oregano","bay leaf","star anise","sumac","spice","seasoning","powder","flake"] },
   { id:"other",   label:"Other",               emoji:"🛒", keywords:[] },
@@ -53,26 +47,38 @@ function getShopCat(itemName) {
 
 async function importFromUrl(url) {
   let pageText = "";
-  try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const proxyRes = await fetch(proxyUrl);
-    const proxyData = await proxyRes.json();
-    const html = proxyData.contents || "";
-    pageText = html
-      .replace(/<script[\s\S]*?<\/script>/gi, "")
-      .replace(/<style[\s\S]*?<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 6000);
-  } catch {
-    throw new Error("Could not fetch page");
+  const proxies = [
+    { url: `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, type: "allorigins" },
+    { url: `https://corsproxy.io/?${encodeURIComponent(url)}`, type: "text" },
+  ];
+  for (const proxy of proxies) {
+    try {
+      const proxyRes = await fetch(proxy.url);
+      if (!proxyRes.ok) continue;
+      let raw = "";
+      if (proxy.type === "allorigins") {
+        const json = await proxyRes.json();
+        raw = json.contents || "";
+      } else {
+        raw = await proxyRes.text();
+      }
+      if (raw.length > 500) {
+        pageText = raw
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 6000);
+        break;
+      }
+    } catch { continue; }
   }
-  if (!pageText) throw new Error("Empty page");
+  if (!pageText) throw new Error("Could not fetch page");
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1500, messages:[{ role:"user",
-      content:`Extract the recipe from the following webpage text and return ONLY a JSON object (no markdown, no extra text) with these fields: name (string), emoji (single relevant emoji), time (string like "30 min"), serves (number), category (one of: spice-blends, meat-times, breakfast, mains, sweet-treats), ingredients (array of {amount, item}), steps (array of strings), notes (string). Webpage text:\n\n${pageText}` }] })
+      content:`Extract the recipe from the following webpage text and return ONLY a JSON object (no markdown, no extra text) with these fields: name (string), emoji (single relevant emoji), time (string like "30 min"), serves (number), category (one of: spice-blends, meat-times, breakfast, mains, baking, sweet-treats), ingredients (array of {amount, item}), steps (array of strings), notes (string). Webpage text:\n\n${pageText}` }] })
   });
   const data = await res.json();
   const text = data.content?.map(b => b.text||"").join("") || "";
@@ -519,7 +525,27 @@ export default function App() {
                     shopByCategory.forEach(cat => {
                       if (!cat.items.length) return;
                       lines.push(`${cat.emoji} ${cat.label}`);
-                      cat.items.forEach(item => lines.push(`  • ${item.item}${item.amount ? "  " + item.amount : ""}`));
+                      cat.items.forEach(item => {
+                        let amountStr = "";
+                        if (item.sources.length > 1) {
+                          const srcAmounts = item.sources.map(srcId => {
+                            const rec = recipes.find(r => r.id === srcId);
+                            if (!rec) return item.amount;
+                            const ing = rec.ingredients.find(i => cleanIngredient(i.item).toLowerCase() === item.item.toLowerCase());
+                            return ing ? ing.amount : item.amount;
+                          });
+                          const allSame = srcAmounts.every(a => a === srcAmounts[0]);
+                          const hasMeasure = srcAmounts[0] && /\d/.test(srcAmounts[0]) && /g|kg|ml|l|cup|tsp|tbs|tbsp|oz|lb/.test(srcAmounts[0]);
+                          if (allSame && srcAmounts[0] && hasMeasure) {
+                            amountStr = `  ${item.sources.length} x ${srcAmounts[0]}`;
+                          } else {
+                            amountStr = item.amount ? `  ${item.amount}` : "";
+                          }
+                        } else if (item.amount) {
+                          amountStr = `  ${item.amount}`;
+                        }
+                        lines.push(`  • ${item.item}${amountStr}`);
+                      });
                       lines.push("");
                     });
                     if ((extraItems||[]).length) {
