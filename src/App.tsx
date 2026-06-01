@@ -1,8 +1,49 @@
 import { useState, useEffect, useRef } from "react";
 
+// ── Storage ──────────────────────────────────────────────────────
 const STORAGE_KEYS = { recipes: "rb_recipes", plan: "rb_plan", extras: "rb_extras", skipped: "rb_skipped" };
 function loadData(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } }
 function saveData(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+
+// ── Seed data ────────────────────────────────────────────────────
+const SEED_RECIPES = [
+  { id:"r1", category:"spice-blends", emoji:"🌶️", name:"Smoky BBQ rub", time:"5 min", serves:8,
+    ingredients:[{amount:"2 tbsp",item:"smoked paprika"},{amount:"1 tbsp",item:"brown sugar"},{amount:"1 tbsp",item:"ground cumin"},{amount:"1 tsp",item:"garlic powder"},{amount:"1 tsp",item:"onion powder"},{amount:"1 tsp",item:"mustard powder"},{amount:"1 tsp",item:"black pepper"},{amount:"1 tsp",item:"salt"},{amount:"¼ tsp",item:"cayenne pepper"}],
+    steps:["Combine all spices in a small bowl and mix well.","Store in an airtight jar away from direct light.","Use 1–2 tbsp per 500g of meat, rubbed in at least 30 min before cooking."],
+    notes:"Great on pork ribs, beef brisket, or chicken thighs. Keeps for 3 months.", source:"" },
+  { id:"r2", category:"mains", emoji:"🍝", name:"Pasta puttanesca", time:"30 min", serves:4,
+    ingredients:[{amount:"400g",item:"spaghetti"},{amount:"4",item:"garlic cloves, sliced"},{amount:"1 tin",item:"anchovy fillets"},{amount:"400g tin",item:"crushed tomatoes"},{amount:"100g",item:"kalamata olives"},{amount:"2 tbsp",item:"capers"},{amount:"½ tsp",item:"chilli flakes"},{amount:"handful",item:"flat-leaf parsley"}],
+    steps:["Cook spaghetti in well-salted boiling water until al dente.","Fry garlic and anchovies in olive oil until anchovies dissolve.","Add tomatoes, olives, capers and chilli. Simmer 10 minutes.","Toss drained pasta through the sauce. Finish with parsley."],
+    notes:"Anchovies melt into the sauce — you won't taste them, just depth.", source:"" },
+  { id:"r8", category:"mains", emoji:"🍛", name:"Butter chicken", time:"45 min", serves:4,
+    ingredients:[{amount:"700g",item:"chicken thighs, cut into chunks"},{amount:"1 tin",item:"crushed tomatoes"},{amount:"200ml",item:"thickened cream"},{amount:"1",item:"brown onion, diced"},{amount:"4",item:"garlic cloves, minced"},{amount:"1 tbsp",item:"fresh ginger, grated"},{amount:"2 tbsp",item:"butter"},{amount:"2 tsp",item:"garam masala"},{amount:"1 tsp",item:"ground cumin"},{amount:"1 tsp",item:"ground coriander"},{amount:"1 tsp",item:"smoked paprika"},{amount:"1 tsp",item:"sugar"},{amount:"to serve",item:"steamed rice"}],
+    steps:["Fry onion in butter over medium heat until soft, about 8 min.","Add garlic, ginger and spices. Cook 2 minutes until fragrant.","Add tomatoes and sugar. Simmer 10 minutes.","Add chicken and cook through, about 12 minutes.","Stir in cream and simmer gently 5 minutes. Serve with rice."],
+    notes:"Better the next day once the flavours develop. Freezes well.", source:"" },
+  { id:"r9", category:"mains", emoji:"🥗", name:"Roast veggie salad", time:"40 min", serves:4,
+    ingredients:[{amount:"1",item:"sweet potato, cubed"},{amount:"1",item:"red capsicum, sliced"},{amount:"1",item:"zucchini, sliced"},{amount:"1 tin",item:"chickpeas, drained"},{amount:"100g",item:"feta cheese, crumbled"},{amount:"80g",item:"baby spinach"},{amount:"2 tbsp",item:"olive oil"},{amount:"1 tbsp",item:"balsamic vinegar"},{amount:"1 tsp",item:"smoked paprika"},{amount:"handful",item:"flat-leaf parsley"}],
+    steps:["Preheat oven to 200°C. Toss sweet potato, capsicum and zucchini in olive oil and paprika.","Roast 25 minutes, adding chickpeas for the last 10 minutes.","Let cool slightly. Toss with spinach, feta and parsley.","Drizzle with balsamic and serve warm or at room temp."],
+    notes:"Add a poached egg on top to make it more substantial.", source:"" },
+  { id:"r10", category:"mains", emoji:"🍜", name:"Thai green curry", time:"35 min", serves:4,
+    ingredients:[{amount:"600g",item:"chicken breast, sliced"},{amount:"400ml tin",item:"coconut cream"},{amount:"2 tbsp",item:"green curry paste"},{amount:"1",item:"zucchini, sliced"},{amount:"1",item:"red capsicum, sliced"},{amount:"100g",item:"snow peas"},{amount:"2 tbsp",item:"fish sauce"},{amount:"1 tsp",item:"sugar"},{amount:"1",item:"lime, juiced"},{amount:"handful",item:"fresh basil leaves"},{amount:"to serve",item:"steamed jasmine rice"}],
+    steps:["Fry curry paste in a little oil for 1 minute until fragrant.","Add coconut cream and bring to a gentle simmer.","Add chicken and cook 8 minutes.","Add vegetables and cook 5 minutes until just tender.","Season with fish sauce, sugar and lime. Finish with basil."],
+    notes:"Don't boil the coconut cream hard or it splits. Keep it at a gentle bubble.", source:"" },
+  { id:"r3", category:"meat-times", emoji:"🥩", name:"Beef", time:"Reference", serves:1, ingredients:[], steps:[],
+    rows:[{doneness:"Whole roast — rare",temp:"52–55°C",time:"20 min / 500g",oven:"220°C",rest:"20 min"},{doneness:"Whole roast — medium-rare",temp:"57–60°C",time:"25 min / 500g",oven:"200°C",rest:"20 min"},{doneness:"Whole roast — medium",temp:"63–68°C",time:"30 min / 500g",oven:"180°C",rest:"15 min"},{doneness:"Whole roast — well done",temp:"71°C+",time:"35 min / 500g",oven:"160°C",rest:"10 min"},{doneness:"Steak — rare",temp:"52–55°C",time:"2 min each side",oven:"High pan",rest:"5 min"},{doneness:"Steak — medium-rare",temp:"57–60°C",time:"3 min each side",oven:"High pan",rest:"5 min"},{doneness:"Steak — medium",temp:"63–68°C",time:"4 min each side",oven:"Med-high",rest:"5 min"},{doneness:"Brisket (low & slow)",temp:"93–96°C",time:"1.5 hrs / 500g",oven:"140°C",rest:"30 min"},{doneness:"Beef ribs (low & slow)",temp:"93°C+",time:"5–6 hrs total",oven:"135°C",rest:"20 min"},{doneness:"Beef mince",temp:"72°C",time:"4–5 min each side",oven:"Med pan",rest:"—"}],
+    notes:"Always sear first. Pull meat 5°C below target — it rises while resting.", source:"" },
+  { id:"r5", category:"meat-times", emoji:"🍗", name:"Chicken", time:"Reference", serves:1, ingredients:[], steps:[],
+    rows:[{doneness:"Whole chicken",temp:"75°C (thigh)",time:"20 min / 500g",oven:"200°C",rest:"15 min"},{doneness:"Breast (bone-in)",temp:"75°C",time:"35–40 min",oven:"190°C",rest:"5 min"},{doneness:"Breast (boneless)",temp:"75°C",time:"20–25 min",oven:"190°C",rest:"5 min"},{doneness:"Thighs (bone-in)",temp:"80°C",time:"40–45 min",oven:"200°C",rest:"5 min"},{doneness:"Thighs (boneless)",temp:"80°C",time:"25–30 min",oven:"200°C",rest:"5 min"},{doneness:"Drumsticks",temp:"80°C",time:"35–40 min",oven:"200°C",rest:"5 min"},{doneness:"Wings",temp:"80°C",time:"40–45 min",oven:"220°C",rest:"—"},{doneness:"Maryland",temp:"80°C",time:"45–50 min",oven:"200°C",rest:"5 min"},{doneness:"Spatchcock",temp:"75°C (thigh)",time:"45–55 min total",oven:"220°C",rest:"10 min"}],
+    notes:"Chicken must always reach 75°C minimum. Juices should run clear.", source:"" },
+  { id:"r6", category:"meat-times", emoji:"🐑", name:"Lamb", time:"Reference", serves:1, ingredients:[], steps:[],
+    rows:[{doneness:"Leg — rare",temp:"55–60°C",time:"20 min / 500g",oven:"220°C",rest:"15 min"},{doneness:"Leg — medium",temp:"65–70°C",time:"25 min / 500g",oven:"180°C",rest:"15 min"},{doneness:"Leg — well done",temp:"75°C+",time:"30 min / 500g",oven:"160°C",rest:"10 min"},{doneness:"Rack — rare",temp:"55–57°C",time:"20–25 min",oven:"200°C",rest:"10 min"},{doneness:"Rack — medium",temp:"63–65°C",time:"25–30 min",oven:"200°C",rest:"10 min"},{doneness:"Cutlets (pan)",temp:"70°C",time:"3 min each side",oven:"High pan",rest:"3 min"},{doneness:"Shoulder (slow)",temp:"90°C+",time:"4–5 hrs",oven:"160°C",rest:"20 min"},{doneness:"Shanks (braise)",temp:"Fall-off-bone",time:"2.5–3 hrs",oven:"160°C",rest:"—"}],
+    notes:"Rack of lamb is best rare to medium-rare. Shoulder rewards patience.", source:"" },
+  { id:"r7", category:"meat-times", emoji:"🐷", name:"Pork", time:"Reference", serves:1, ingredients:[], steps:[],
+    rows:[{doneness:"Whole roast (loin/leg)",temp:"63–65°C",time:"25 min / 500g",oven:"180°C",rest:"10 min"},{doneness:"Pork chops (pan)",temp:"63°C",time:"4 min each side",oven:"Med-high",rest:"5 min"},{doneness:"Pork belly (crackling)",temp:"75°C",time:"2–2.5 hrs",oven:"Start 240°C 20min, then 160°C",rest:"10 min"},{doneness:"Pork ribs (low & slow)",temp:"93°C+",time:"3–4 hrs",oven:"150°C",rest:"10 min"},{doneness:"Pulled pork (shoulder)",temp:"93–96°C",time:"2–2.5 hrs / 500g",oven:"150°C",rest:"30 min"},{doneness:"Sausages",temp:"72°C",time:"15–20 min",oven:"190°C or pan",rest:"—"},{doneness:"Ham (glazed)",temp:"60°C",time:"15 min / 500g",oven:"180°C",rest:"15 min"}],
+    notes:"Pork is safe at 63°C (slightly pink). For crackling, skin must be dry and scored.", source:"" },
+  { id:"r4", category:"sweet-treats", emoji:"🍌", name:"Banana bread", time:"1h 10min", serves:8,
+    ingredients:[{amount:"3",item:"very ripe bananas"},{amount:"80g",item:"butter, melted"},{amount:"150g",item:"brown sugar"},{amount:"2",item:"eggs"},{amount:"1 tsp",item:"vanilla extract"},{amount:"200g",item:"plain flour"},{amount:"1 tsp",item:"baking soda"},{amount:"pinch",item:"salt"}],
+    steps:["Preheat oven to 175°C. Grease a loaf tin.","Mash bananas well. Stir in melted butter.","Mix in sugar, eggs and vanilla.","Fold in flour, baking soda and salt until just combined.","Pour into tin and bake 60–65 min until a skewer comes out clean.","Cool in tin 10 min, then turn out onto a rack."],
+    notes:"The blacker the bananas, the sweeter and more flavourful the loaf.", source:"" },
+];
 
 const CATEGORIES = [
   { id:"spice-blends", label:"Spice blends",  emoji:"🌶️", color:"#B85C2A", bg:"#FBF0EB" },
@@ -13,44 +54,18 @@ const CATEGORIES = [
   { id:"sweet-treats", label:"Sweet treats",  emoji:"🍬", color:"#9B5B8A", bg:"#F5EBF3" },
 ];
 
-const EMOJI_GROUPS = [
-  { label:"Meat & fish",    emojis:["🥩","🍗","🍖","🥓","🌭","🐟","🦐","🦑","🦞","🦀","🍣","🥚","🍳"] },
-  { label:"Veg & fruit",    emojis:["🥦","🥕","🧅","🧄","🥔","🌽","🫑","🥑","🍅","🥒","🥬","🍎","🍋","🍌","🍇"] },
-  { label:"Grains & bowls", emojis:["🍝","🍜","🍛","🍚","🥘","🫕","🌮","🌯","🥙","🥗","🍲","🫔","🧆"] },
-  { label:"Baking & sweets",emojis:["🎂","🍰","🧁","🍩","🍪","🥐","🍞","🥖","🧇","🥞","🍫","🍮","🍯"] },
-  { label:"Drinks",         emojis:["☕","🍵","🧃","🥤","🍹","🍷","🥂","🍺","🫖","🧋","🥛"] },
-  { label:"Spices",         emojis:["🧂","🫙","🫚","🌶️","🌿","🍃","🌱","⭐","✨","🔥","💫"] },
-];
-
-const SHOP_CATS = [
-  { id:"meat",    label:"Meat & Fish",        emoji:"🥩", keywords:["chicken","beef","pork","lamb","mince","steak","bacon","sausage","fish","prawn","shrimp","squid","salmon","tuna","fillet","thigh","breast","brisket","ribs","turkey","duck","anchovy","seafood"] },
-  { id:"produce", label:"Fruit & Veg",         emoji:"🥦", keywords:["onion","garlic","ginger","tomato","capsicum","carrot","celery","zucchini","broccoli","spinach","kale","potato","pumpkin","eggplant","mushroom","cabbage","leek","beetroot","corn","pea","bean","avocado","lemon","lime","orange","apple","banana","mango","pineapple","parsley","coriander","basil","rosemary","thyme","mint","dill","chilli","spring onion","shallot","bok choy","cauliflower","sweet potato"] },
-  { id:"tins",    label:"Tins & Jars",         emoji:"🥫", keywords:["tin","canned","crushed tomato","diced tomato","whole tomato","coconut milk","coconut cream","kidney bean","butter bean","chickpea","lentil","passata","tomato paste","curry paste","gochujang","miso","oyster sauce","fish sauce","soy","hoisin","tahini","peanut butter","stock cube","chutney","capers","olive"] },
-  { id:"dry",     label:"Dry Goods",           emoji:"🌾", keywords:["pasta","spaghetti","rice","flour","couscous","noodle","risoni","risotto","lentil","oat","bread","crumb","panko","cornstarch","baking powder","baking soda","sugar","salt","pepper","yeast","almond meal","cornmeal"] },
-  { id:"dairy",   label:"Dairy & Eggs",        emoji:"🧀", keywords:["butter","cream","milk","cheese","parmesan","ricotta","yoghurt","yogurt","egg","feta","haloumi","halloumi","ghee","cream cheese","sour cream","buttermilk"] },
-  { id:"sauces",  label:"Sauces & Condiments", emoji:"🫙", keywords:["oil","vinegar","sauce","stock","broth","wine","honey","molasse","worcestershire","tabasco","mustard","mayo","ketchup","sriracha","mango chutney","relish"] },
-  { id:"spices",  label:"Spices",              emoji:"🌿", keywords:["paprika","cumin","coriander","turmeric","garam masala","cinnamon","nutmeg","cardamom","clove","fennel","allspice","cayenne","chilli powder","oregano","bay leaf","star anise","sumac","spice","seasoning","powder","flake"] },
-  { id:"other",   label:"Other",               emoji:"🛒", keywords:[] },
-];
-
-function getCat(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[3]; }
+function getCat(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[2]; }
 function uid() { return Math.random().toString(36).slice(2, 10); }
-
-function getShopCat(itemName) {
-  const name = itemName.toLowerCase();
-  for (const cat of SHOP_CATS) {
-    if (cat.id === "other") continue;
-    if (cat.keywords.some(k => name.includes(k))) return cat.id;
-  }
-  return "other";
-}
 
 async function importFromUrl(url) {
   let pageText = "";
+
+  // Try two CORS proxies in sequence
   const proxies = [
     { url: `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, type: "allorigins" },
     { url: `https://corsproxy.io/?${encodeURIComponent(url)}`, type: "text" },
   ];
+
   for (const proxy of proxies) {
     try {
       const proxyRes = await fetch(proxy.url);
@@ -74,7 +89,9 @@ async function importFromUrl(url) {
       }
     } catch { continue; }
   }
+
   if (!pageText) throw new Error("Could not fetch page");
+
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST", headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1500, messages:[{ role:"user",
@@ -85,132 +102,189 @@ async function importFromUrl(url) {
   return JSON.parse(text.replace(/```json|```/g,"").trim());
 }
 
+// ── EMOJI GROUPS ─────────────────────────────────────────────────
+const EMOJI_GROUPS = [
+  { label:"Meat & fish",   emojis:["🥩","🍗","🍖","🥓","🌭","🐟","🦐","🦑","🦞","🦀","🍣","🥚","🍳"] },
+  { label:"Veg & fruit",   emojis:["🥦","🥕","🧅","🧄","🥔","🌽","🫑","🥑","🍅","🥒","🥬","🍎","🍋","🍌","🍇"] },
+  { label:"Grains & bowls",emojis:["🍝","🍜","🍛","🍚","🥘","🫕","🌮","🌯","🥙","🥗","🍲","🫔","🧆"] },
+  { label:"Baking & sweets",emojis:["🎂","🍰","🧁","🍩","🍪","🥐","🍞","🥖","🧇","🥞","🍫","🍮","🍯"] },
+  { label:"Drinks",        emojis:["☕","🍵","🧃","🥤","🍹","🍷","🥂","🍺","🫖","🧋","🥛"] },
+  { label:"Spices",        emojis:["🧂","🫙","🫚","🌶️","🌿","🍃","🌱","⭐","✨","🔥","💫"] },
+];
+
+// ════════════════════════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════════════════════════
+// ── Clean ingredient name for shopping list display ───────────────
 function cleanIngredient(item) {
   return item
-    .replace(/\(.*?\)/g, "")
-    .replace(/,.*$/, "")
-    .replace(/\b(diced|chopped|sliced|minced|grated|crushed|beaten|melted|softened|peeled|halved|cubed|shredded|finely|roughly|thinly|lightly|bruised|deboned|boneless|divided|fried|roasted|blended|optional|separated|sifted|rinsed|drained|thawed|trimmed|washed)\b/gi, "")
-    .replace(/\s+/g, " ")
+    // Remove everything in parentheses
+    .replace(/\(.*?\)/g, '')
+    // Remove everything after a comma
+    .replace(/,.*$/, '')
+    // Remove common prep words if they appear standalone at end
+    .replace(/\b(diced|chopped|sliced|minced|grated|crushed|beaten|melted|softened|peeled|halved|cubed|shredded|finely|roughly|thinly|lightly|bruised|deboned|boneless|divided|fried|roasted|blended|optional|separated|sifted|rinsed|drained|thawed|trimmed|washed)\b/gi, '')
+    // Clean up extra whitespace
+    .replace(/\s+/g, ' ')
     .trim();
 }
-
 function addAmounts(a, b) {
   if (!a || a === b) return a;
   if (!b) return a;
-  const UNITS = ["g","kg","ml","l","cup","cups","tsp","tbsp","tbs","oz","lb"];
+
+  // Units we can add numerically
+  const UNITS = ['g','kg','ml','l','cup','cups','tsp','tbsp','tbs','oz','lb'];
+
   function parse(str) {
-    const fracs = {"½":0.5,"¼":0.25,"¾":0.75,"⅓":0.333,"⅔":0.667,"⅛":0.125};
-    let clean = str.trim().toLowerCase();
+    const s = str.trim().toLowerCase();
+    // Match: number (inc fractions like ½, ¾, ¼, 1½) + optional unit
+    const fracs = {'½':0.5,'¼':0.25,'¾':0.75,'⅓':0.333,'⅔':0.667,'⅛':0.125};
+    let num = 0;
+    let unit = '';
+    // Replace unicode fractions
+    let clean = s;
     for (const [f, v] of Object.entries(fracs)) clean = clean.replace(f, ` ${v} `);
     const parts = clean.trim().split(/\s+/);
-    const nums = []; const units = [];
+    let nums = [];
+    let units = [];
     for (const p of parts) {
-      if (!isNaN(p) && p !== "") nums.push(parseFloat(p));
+      if (!isNaN(p) && p !== '') nums.push(parseFloat(p));
       else if (UNITS.includes(p)) units.push(p);
     }
-    const num = nums.reduce((a,b) => a+b, 0);
-    const unit = units[0] || "";
+    num = nums.reduce((a,b) => a+b, 0);
+    unit = units[0] || '';
     return num > 0 ? { num, unit } : null;
   }
-  const pa = parse(a); const pb = parse(b);
+
+  const pa = parse(a);
+  const pb = parse(b);
+
+  // Only add if both parsed successfully and units match
   if (pa && pb && pa.unit === pb.unit) {
     const total = pa.num + pb.num;
+    // Format nicely
     const fmtNum = (n) => {
       if (n === Math.floor(n)) return String(n);
-      const fracs = [[0.5,"½"],[0.25,"¼"],[0.75,"¾"],[0.333,"⅓"],[0.667,"⅔"]];
-      const whole = Math.floor(n); const frac = n - whole;
+      const fracs = [[0.5,'½'],[0.25,'¼'],[0.75,'¾'],[0.333,'⅓'],[0.667,'⅔']];
+      const whole = Math.floor(n);
+      const frac = n - whole;
       for (const [v, sym] of fracs) if (Math.abs(frac - v) < 0.05) return whole > 0 ? `${whole}${sym}` : sym;
       return n.toFixed(1);
     };
     return pa.unit ? `${fmtNum(total)} ${pa.unit}` : fmtNum(total);
   }
+
+  // Can't add — show both amounts
   if (a === b) return a;
   return `${a} + ${b}`;
 }
 
 export default function App() {
-  const [recipes, setRecipes]           = useState(null);
-  const [plan, setPlan]                 = useState(null);
-  const [extraItems, setExtraItems]     = useState(null);
-  const [skipped, setSkipped]           = useState(null);
-  const [tab, setTab]                   = useState("cookbook");
-  const [activeCat, setActiveCat]       = useState("mains");
-  const [view, setView]                 = useState(null);
-  const [checkedItems, setCheckedItems] = useState({});
-  const [newExtra, setNewExtra]         = useState({name:"",amount:""});
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [importing, setImporting]       = useState(false);
-  const [importUrl, setImportUrl]       = useState("");
-  const [importError, setImportError]   = useState("");
-  const [copied, setCopied]             = useState(false);
+  const [recipes, setRecipes]               = useState(null);
+  const [plan, setPlan]                     = useState(null);
+  const [extraItems, setExtraItems]         = useState(null);
+  const [skipped, setSkipped]               = useState(null);
+  const [tab, setTab]                       = useState("cookbook");   // cookbook | plan | shopping
+  const [activeCat, setActiveCat]           = useState("mains");
+  const [view, setView]                     = useState(null);         // null | {type:"recipe",id} | {type:"editor",recipe} | {type:"catpicker"} | {type:"addimport"}
+  const [checkedItems, setCheckedItems]     = useState({});
+  const [newExtra, setNewExtra]             = useState({name:"",amount:""});
+  const [confirmReset, setConfirmReset]     = useState(false);
+  const [importing, setImporting]           = useState(false);
+  const [importUrl, setImportUrl]           = useState("");
+  const [importError, setImportError]       = useState("");
+  const [copied, setCopied]                 = useState(false);
   const extraRef = useRef(null);
   const importRef = useRef(null);
 
+  // ── Export helpers ────────────────────────────────────────────
   function exportJSON() {
     const data = { recipes, plan, extras: extraItems, skipped, exportedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "recipe-binder.json"; a.click();
+    const a = document.createElement("a");
+    a.href = url; a.download = "recipe-binder.json"; a.click();
     URL.revokeObjectURL(url);
   }
 
   function exportGoogleDoc() {
-    const lines = ["MY RECIPE BINDER", `Exported ${new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"})}`, ""];
+    const lines = [];
+    lines.push("MY RECIPE BINDER");
+    lines.push(`Exported ${new Date().toLocaleDateString("en-AU", {day:"numeric",month:"long",year:"numeric"})}`);
+    lines.push("");
     CATEGORIES.forEach(cat => {
       const recs = recipes.filter(r => r.category === cat.id);
       if (!recs.length) return;
-      lines.push("════════════════════════════════", cat.label.toUpperCase(), "════════════════════════════════");
+      lines.push("════════════════════════════════");
+      lines.push(cat.label.toUpperCase());
+      lines.push("════════════════════════════════");
       recs.forEach(rec => {
-        lines.push("", `${rec.emoji}  ${rec.name}`);
+        lines.push("");
+        lines.push(`${rec.emoji}  ${rec.name}`);
+        if (rec.time && rec.category !== "meat-times" && rec.category !== "spice-blends") lines.push(`${rec.time} · serves ${rec.serves}`);
         if (rec.category === "meat-times" && rec.rows?.length) {
-          lines.push("", "Cut / Doneness          Temp        Time              Oven       Rest");
+          lines.push("");
+          lines.push("Cut / Doneness          Temp        Time              Oven       Rest");
           lines.push("─────────────────────────────────────────────────────────────────────");
           rec.rows.forEach(row => lines.push(`${row.doneness.padEnd(24)}${row.temp.padEnd(12)}${row.time.padEnd(18)}${row.oven.padEnd(11)}${row.rest}`));
         } else if (rec.ingredients?.length) {
-          lines.push("", "Ingredients:");
+          lines.push(""); lines.push("Ingredients:");
           rec.ingredients.forEach(ing => lines.push(`  • ${ing.amount}  ${ing.item}`));
         }
-        if (rec.steps?.length) { lines.push("", "Method:"); rec.steps.forEach((s,i) => lines.push(`  ${i+1}. ${s}`)); }
-        if (rec.notes) lines.push("", `Notes: ${rec.notes}`);
+        if (rec.steps?.length) {
+          lines.push(""); lines.push("Method:");
+          rec.steps.forEach((step, i) => lines.push(`  ${i+1}. ${step}`));
+        }
+        if (rec.notes) { lines.push(""); lines.push(`Notes: ${rec.notes}`); }
         lines.push("");
       });
     });
-    const blob = new Blob([lines.join("\n")], { type:"text/plain" });
+    const content = lines.join("\n");
+    const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "recipe-binder.txt"; a.click();
+    const a = document.createElement("a");
+    a.href = url; a.download = "recipe-binder.txt"; a.click();
     URL.revokeObjectURL(url);
   }
 
   function handleImportJSON(e) {
-    const file = e.target.files?.[0]; if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
         if (data.recipes) { setRecipes(data.recipes); saveData(STORAGE_KEYS.recipes, data.recipes); }
-        if (data.plan)    { setPlan(data.plan); saveData(STORAGE_KEYS.plan, data.plan); }
-        if (data.extras)  { setExtraItems(data.extras); saveData(STORAGE_KEYS.extras, data.extras); }
+        if (data.plan) { setPlan(data.plan); saveData(STORAGE_KEYS.plan, data.plan); }
+        if (data.extras) { setExtraItems(data.extras); saveData(STORAGE_KEYS.extras, data.extras); }
         if (data.skipped) { setSkipped(data.skipped); saveData(STORAGE_KEYS.skipped, data.skipped); }
-        setView({ type:"importSuccess" });
-      } catch { alert("Couldn't read that file."); }
+        setView({ type: "importSuccess" });
+      } catch { alert("Couldn't read that file — make sure it's a recipe-binder.json export."); }
     };
-    reader.readAsText(file); e.target.value = "";
+    reader.readAsText(file);
+    e.target.value = "";
   }
 
   useEffect(() => {
-    const r = loadData(STORAGE_KEYS.recipes);
-    setRecipes(r || []);
-    const p = loadData(STORAGE_KEYS.plan);
-    if (p && !Array.isArray(p)) setPlan([...new Set(Object.values(p).filter(Boolean))]);
-    else setPlan(p || []);
-    setExtraItems(loadData(STORAGE_KEYS.extras) || []);
-    setSkipped(loadData(STORAGE_KEYS.skipped) || []);
+    (() => {
+      const r = loadData(STORAGE_KEYS.recipes);
+      if (r) {
+        const ids = new Set(r.map(x => x.id));
+        const missing = SEED_RECIPES.filter(s => !ids.has(s.id));
+        setRecipes(missing.length ? [...r, ...missing] : r);
+      } else { setRecipes(SEED_RECIPES); }
+      const p = loadData(STORAGE_KEYS.plan);
+      if (p && !Array.isArray(p)) setPlan([...new Set(Object.values(p).filter(Boolean))]);
+      else setPlan(p || []);
+      const e = loadData(STORAGE_KEYS.extras); setExtraItems(e || []);
+      const sk = loadData(STORAGE_KEYS.skipped); setSkipped(sk || []);
+    })();
   }, []);
 
-  useEffect(() => { if (recipes !== null) saveData(STORAGE_KEYS.recipes, recipes); }, [recipes]);
-  useEffect(() => { if (plan !== null)    saveData(STORAGE_KEYS.plan, plan); }, [plan]);
-  useEffect(() => { if (extraItems !== null) saveData(STORAGE_KEYS.extras, extraItems); }, [extraItems]);
-  useEffect(() => { if (skipped !== null) saveData(STORAGE_KEYS.skipped, skipped); }, [skipped]);
+  useEffect(() => { if (recipes) saveData(STORAGE_KEYS.recipes, recipes); }, [recipes]);
+  useEffect(() => { if (plan) saveData(STORAGE_KEYS.plan, plan); }, [plan]);
+  useEffect(() => { if (extraItems) saveData(STORAGE_KEYS.extras, extraItems); }, [extraItems]);
+  useEffect(() => { if (skipped) saveData(STORAGE_KEYS.skipped, skipped); }, [skipped]);
 
   if (!recipes || !plan || !extraItems || !skipped) return (
     <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontFamily:"'Lora',serif",color:"#8a7a6a",fontSize:16,background:"#faf7f3"}}>
@@ -218,41 +292,39 @@ export default function App() {
     </div>
   );
 
+  // ── Derived ──────────────────────────────────────────────────
   const catRecipes = recipes.filter(r => r.category === activeCat);
   const viewedRecipe = view?.type === "recipe" ? recipes.find(r => r.id === view.id) : null;
   const plannedIds = [...new Set(plan||[])];
-
   const shopIngredients = plannedIds.flatMap(id => {
     const rec = recipes.find(r => r.id === id);
     return rec ? rec.ingredients.map((ing,idx) => ({
       ...ing,
       displayItem: cleanIngredient(ing.item),
-      recipeId: id,
-      skipKey: `${id}-${idx}`
+      recipeId:id,
+      skipKey:`${id}-${idx}`
     })).filter(ing => !(skipped||[]).includes(ing.skipKey)) : [];
   });
-
-  const STOP_WORDS = new Set(["diced","chopped","sliced","minced","grated","crushed",
-    "fresh","dried","frozen","cooked","raw","whole","large","small","medium","finely",
-    "roughly","thinly","bite","sized","cut","halved","cubed","shredded","peeled",
-    "optional","to","serve","taste","topped","sprigs","bunch","handful","pinch","can",
-    "tin","packet","jar","bottle","bag","head","clove","cloves","stalk","stalks",
-    "stick","sticks","ripe","lightly","bruised","deboned","boneless","stripped","mixed"]);
-
-  function normWord(w) {
-    if (w.length > 4 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
-    return w;
-  }
-
   const grouped = {};
   shopIngredients.forEach(ing => {
+    const STOP_WORDS = new Set(['diced','chopped','sliced','minced','grated','crushed',
+      'fresh','dried','frozen','cooked','raw','whole','large','small','medium','finely',
+      'roughly','thinly','bite','sized','cut','halved','cubed','shredded','peeled',
+      'optional','to','serve','taste','topped','sprigs','bunch','handful','pinch','can',
+      'tin','packet','jar','bottle','bag','head','clove','cloves','stalk','stalks',
+      'stick','sticks','ripe','lightly','bruised','deboned','boneless','stripped','mixed']);
+    // Normalise plurals: strip trailing 's' for basic dedup (chicken breast vs chicken breasts)
+    function normWord(w) {
+      if (w.length > 4 && w.endsWith('s') && !w.endsWith('ss')) return w.slice(0, -1);
+      return w;
+    }
     const base = (ing.displayItem || ing.item).toLowerCase()
-      .replace(/[^a-z\s]/g, "")
+      .replace(/[^a-z\s]/g, '')
       .split(/[\s,]+/)
       .filter(w => w.length > 2 && !STOP_WORDS.has(w))
       .map(w => normWord(w))
       .sort()
-      .join("");
+      .join('');
     if (!grouped[base]) {
       grouped[base] = {...ing, item: ing.displayItem || ing.item, sources:[ing.recipeId]};
     } else {
@@ -262,11 +334,31 @@ export default function App() {
   });
   const shopItems = Object.values(grouped);
 
+  // ── Shopping categories ───────────────────────────────────────
+  const SHOP_CATS = [
+    { id:'meat',    label:'Meat & Fish',         emoji:'🥩', keywords:['chicken','beef','pork','lamb','mince','steak','bacon','sausage','fish','prawn','shrimp','squid','salmon','tuna','fillet','thigh','breast','brisket','ribs','meatball','turkey','duck','veal','venison','anchovy','seafood'] },
+    { id:'produce', label:'Fruit & Veg',          emoji:'🥦', keywords:['onion','garlic','ginger','tomato','capsicum','carrot','celery','zucchini','broccoli','spinach','kale','potato','pumpkin','eggplant','mushroom','cabbage','leek','beetroot','corn','pea','bean','lentil','chickpea','avocado','lemon','lime','orange','apple','banana','mango','pineapple','parsley','coriander','basil','rosemary','thyme','mint','dill','chilli','herb','spring onion','shallot','bok choy','cauliflower','sweet potato'] },
+    { id:'tins',    label:'Tins & Jars',          emoji:'🥫', keywords:['tin','canned','crushed tomato','diced tomato','whole tomato','coconut milk','coconut cream','kidney bean','butter bean','chickpea','lentil','passata','tomato paste','curry paste','gochujang','miso','oyster sauce','fish sauce','soy','hoisin','tahini','peanut butter','stock cube','chutney','capers','olive','anchovy'] },
+    { id:'dry',     label:'Dry Goods',            emoji:'🌾', keywords:['pasta','spaghetti','rice','flour','couscous','noodle','risoni','risotto','lentil','oat','bread','crumb','panko','cornstarch','baking powder','baking soda','sugar','salt','pepper','yeast','almond meal'] },
+    { id:'dairy',   label:'Dairy & Eggs',         emoji:'🧀', keywords:['butter','cream','milk','cheese','parmesan','ricotta','yoghurt','yogurt','egg','feta','haloumi','halloumi','ghee','cream cheese','sour cream'] },
+    { id:'sauces',  label:'Sauces & Condiments',  emoji:'🫙', keywords:['oil','vinegar','sauce','stock','broth','wine','honey','sugar','molasse','worcestershire','tabasco','mustard','mayo','ketchup','tomato sauce','soy sauce','fish sauce','oyster sauce','sriracha','mango chutney','relish','jam'] },
+    { id:'spices',  label:'Spices',               emoji:'🌿', keywords:['paprika','cumin','coriander','turmeric','garam masala','cinnamon','nutmeg','cardamom','clove','fennel','allspice','cayenne','chilli powder','oregano','thyme','rosemary','bay leaf','star anise','sumac','za\'atar','harissa','jerk','spice','seasoning','powder','flake'] },
+    { id:'other',   label:'Other',                emoji:'🛒', keywords:[] },
+  ];
+
+  function getShopCat(itemName) {
+    const name = itemName.toLowerCase();
+    for (const cat of SHOP_CATS) {
+      if (cat.id === 'other') continue;
+      if (cat.keywords.some(k => name.includes(k))) return cat.id;
+    }
+    return 'other';
+  }
+
   const shopByCategory = SHOP_CATS.map(cat => ({
     ...cat,
-    items: shopItems.filter(item => getShopCat(item.item) === cat.id)
+    items: shopItems.filter((item: any) => getShopCat(item.item) === cat.id)
   })).filter(cat => cat.items.length > 0);
-
   function saveRecipe(rec) {
     if (rec.id) setRecipes(p => p.map(r => r.id === rec.id ? rec : r));
     else setRecipes(p => [...p, {...rec, id:uid()}]);
@@ -285,19 +377,28 @@ export default function App() {
     setImporting(false);
   }
 
-  if (view?.type === "importSuccess") return (
-    <Screen>
-      <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:32,textAlign:"center"}}>
-        <div style={{fontSize:56,marginBottom:16}}>✅</div>
-        <div style={{fontFamily:"'Lora',serif",fontSize:20,color:"#2a1f14",marginBottom:8}}>Restored!</div>
-        <div style={{fontSize:14,color:"#8a7a6a",marginBottom:24}}>Your recipes have been loaded.</div>
-        <button style={{...S.pill,background:"#2a1f14",color:"#fff",border:"none",padding:"10px 28px"}} onClick={() => setView(null)}>Back to cookbook</button>
-      </div>
-    </Screen>
-  );
+  // ── Screens ───────────────────────────────────────────────────
 
-  if (view?.type === "editor") return <RecipeEditor recipe={view.recipe} onSave={saveRecipe} onCancel={() => setView(null)} />;
+  // Import success
+  if (view?.type === "importSuccess") {
+    return (
+      <Screen>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:32,textAlign:"center"}}>
+          <div style={{fontSize:56,marginBottom:16}}>✅</div>
+          <div style={{fontFamily:"'Lora',serif",fontSize:20,color:"#2a1f14",marginBottom:8}}>Restored!</div>
+          <div style={{fontSize:14,color:"#8a7a6a",marginBottom:24}}>Your recipes have been loaded from the backup file.</div>
+          <button style={{...S.pill,background:"#2a1f14",color:"#fff",border:"none",padding:"10px 28px"}} onClick={() => setView(null)}>Back to cookbook</button>
+        </div>
+      </Screen>
+    );
+  }
 
+  // Editor
+  if (view?.type === "editor") {
+    return <RecipeEditor recipe={view.recipe} onSave={saveRecipe} onCancel={() => setView(null)} />;
+  }
+
+  // Recipe detail
   if (view?.type === "recipe" && viewedRecipe) {
     const cat = getCat(viewedRecipe.category);
     const isMeat = viewedRecipe.category === "meat-times";
@@ -305,28 +406,30 @@ export default function App() {
     const inPlan = (plan||[]).includes(viewedRecipe.id);
     return (
       <Screen>
-        <div style={{background:"#fff",borderBottom:"1px solid #f0ebe3",position:"sticky",top:0,zIndex:10}}>
+        {/* Header */}
+        <div style={{background:"#fff", borderBottom:"1px solid #f0ebe3", position:"sticky", top:0, zIndex:10}}>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 16px"}}>
             <button style={S.iconBtn} onClick={() => setView(null)}>←</button>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:17,color:"#2a1f14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{viewedRecipe.emoji} {viewedRecipe.name}</div>
               <div style={{fontSize:11,color:"#8a7a6a",marginTop:1}}>
-                {!isMeat && !isSpice && <>{viewedRecipe.time} · </>}
+                {!isMeat && !isSpice && <>{viewedRecipe.time} · serves {viewedRecipe.serves} · </>}
                 <span style={{color:cat.color}}>{cat.label}</span>
               </div>
             </div>
           </div>
           <div style={{display:"flex",gap:8,padding:"0 16px 12px",overflowX:"auto"}}>
             {!isMeat && !isSpice && (
-              <button style={{...S.pill,background:inPlan?"#e8f7f1":"#f0ebe5",color:inPlan?"#2aaa8a":"#3a7fcf",border:`1px solid ${inPlan?"#2aaa8a44":"#3a7fcf44"}`}}
+              <button style={{...S.pill, background:inPlan?"#e8f7f1":"#f0ebe5", color:inPlan?"#2aaa8a":"#3a7fcf", border:`1px solid ${inPlan?"#2aaa8a44":"#3a7fcf44"}`}}
                 onClick={() => inPlan ? setPlan(p=>p.filter(id=>id!==viewedRecipe.id)) : setPlan(p=>[...(p||[]),viewedRecipe.id])}>
                 {inPlan ? "✓ In plan" : "+ Add to plan"}
               </button>
             )}
-            <button style={{...S.pill,color:cat.color,border:`1px solid ${cat.color}44`}} onClick={() => setView({type:"editor",recipe:viewedRecipe})}>Edit</button>
-            <button style={{...S.pill,color:"#c0392b",border:"1px solid #c0392b33"}} onClick={() => deleteRecipe(viewedRecipe.id)}>Delete</button>
+            <button style={{...S.pill, color:cat.color, border:`1px solid ${cat.color}44`}} onClick={() => setView({type:"editor",recipe:viewedRecipe})}>Edit</button>
+            <button style={{...S.pill, color:"#c0392b", border:"1px solid #c0392b33"}} onClick={() => deleteRecipe(viewedRecipe.id)}>Delete</button>
           </div>
         </div>
+
         <div style={{padding:"16px"}}>
           {isMeat ? (
             <>
@@ -364,18 +467,25 @@ export default function App() {
                 return (
                   <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",marginBottom:4,background:spiceAdded?"#f0fbf7":isSkipped?"#faf7f3":"#fff",borderRadius:8,border:"1px solid #f0ebe3",opacity:isSkipped?0.5:1,cursor:"pointer"}}
                     onClick={() => {
-                      if (isSpice) { if (spiceAdded) setExtraItems(p=>p.filter(e=>e.id!==extraKey)); else setExtraItems(p=>[...p,{id:extraKey,name:ing.item,amount:ing.amount}]); }
-                      else { if (isSkipped) setSkipped(p=>p.filter(k=>k!==skipKey)); else setSkipped(p=>[...p,skipKey]); }
+                      if (isSpice) {
+                        if (spiceAdded) setExtraItems(p=>p.filter(e=>e.id!==extraKey));
+                        else setExtraItems(p=>[...p,{id:extraKey,name:ing.item,amount:ing.amount}]);
+                      } else {
+                        if (isSkipped) setSkipped(p=>p.filter(k=>k!==skipKey));
+                        else setSkipped(p=>[...p,skipKey]);
+                      }
                     }}>
                     <input type="checkbox" checked={isSpice ? spiceAdded : !isSkipped} onChange={()=>{}} style={{accentColor:isSpice?"#2aaa8a":cat.color,flexShrink:0,width:18,height:18}} />
-                    <div style={{flex:1}}><span style={{fontSize:13,color:spiceAdded?"#2aaa8a":isSkipped?"#aaa":"#2a1f14",textDecoration:isSkipped?"line-through":"none"}}>{ing.item}</span></div>
+                    <div style={{flex:1}}>
+                      <span style={{fontSize:13,color:spiceAdded?"#2aaa8a":isSkipped?"#aaa":"#2a1f14",textDecoration:isSkipped?"line-through":"none"}}>{ing.item}</span>
+                    </div>
                     <span style={{fontSize:12,color:"#8a7a6a"}}>{ing.amount}</span>
                   </div>
                 );
               })}
-              {!isSpice && viewedRecipe.steps?.length > 0 && (
+              {!isSpice && viewedRecipe.steps.length > 0 && (
                 <>
-                  <div style={{...S.secLabel,marginTop:20,marginBottom:10}}>Method</div>
+                  <div style={{...S.secLabel, marginTop:20, marginBottom:10}}>Method</div>
                   {viewedRecipe.steps.map((step,i) => (
                     <div key={i} style={{display:"flex",gap:12,padding:"10px 0",borderBottom:"1px solid #f5f0ea"}}>
                       <div style={{width:22,height:22,borderRadius:"50%",background:cat.bg,color:cat.color,fontSize:11,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</div>
@@ -384,51 +494,82 @@ export default function App() {
                   ))}
                 </>
               )}
-              {viewedRecipe.notes && <div style={{marginTop:16,borderLeft:`3px solid ${cat.color}`,paddingLeft:12}}><div style={{fontSize:10,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Notes</div><div style={{fontSize:13,color:"#5a4a3a",lineHeight:1.6}}>{viewedRecipe.notes}</div></div>}
+              {viewedRecipe.notes && (
+                <div style={{marginTop:16,borderLeft:`3px solid ${cat.color}`,paddingLeft:12}}>
+                  <div style={{fontSize:10,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Notes</div>
+                  <div style={{fontSize:13,color:"#5a4a3a",lineHeight:1.6}}>{viewedRecipe.notes}</div>
+                </div>
+              )}
             </>
           )}
-          {isMeat && viewedRecipe.notes && <div style={{marginTop:16,borderLeft:`3px solid ${cat.color}`,paddingLeft:12}}><div style={{fontSize:10,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Notes</div><div style={{fontSize:13,color:"#5a4a3a",lineHeight:1.6}}>{viewedRecipe.notes}</div></div>}
+          {isMeat && viewedRecipe.notes && (
+            <div style={{marginTop:16,borderLeft:`3px solid ${cat.color}`,paddingLeft:12}}>
+              <div style={{fontSize:10,fontWeight:700,color:cat.color,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:4}}>Notes</div>
+              <div style={{fontSize:13,color:"#5a4a3a",lineHeight:1.6}}>{viewedRecipe.notes}</div>
+            </div>
+          )}
         </div>
       </Screen>
     );
   }
 
-  if (view?.type === "addimport") return (
-    <Screen>
-      <div style={{background:"#fff",borderBottom:"1px solid #f0ebe3",display:"flex",alignItems:"center",gap:10,padding:"14px 16px",position:"sticky",top:0}}>
-        <button style={S.iconBtn} onClick={() => setView(null)}>←</button>
-        <div style={{fontFamily:"'Lora',serif",fontSize:17,color:"#2a1f14"}}>Add a recipe</div>
-      </div>
-      <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:12}}>
-        <div style={{fontSize:13,color:"#8a7a6a"}}>Paste a URL to import, or add one from scratch.</div>
-        <input style={S.input} placeholder="https://website.com/recipe…" value={importUrl} onChange={e=>setImportUrl(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleImport()} />
-        {importError && <div style={{fontSize:12,color:"#c0392b"}}>{importError}</div>}
-        <button style={{...S.bigBtn,background:importing?"#e8e0d8":"#2a1f14",color:importing?"#8a7a6a":"#fff"}} onClick={handleImport} disabled={importing}>{importing ? "Importing…" : "Import from URL"}</button>
-        <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0"}}><div style={{flex:1,height:1,background:"#e8e0d4"}}/><span style={{fontSize:12,color:"#aaa"}}>or</span><div style={{flex:1,height:1,background:"#e8e0d4"}}/></div>
-        <button style={{...S.bigBtn,background:"#f5f0ea",color:"#3a2e24"}} onClick={() => setView({type:"editor",recipe:{id:null,name:"",emoji:"🍽️",category:activeCat,time:"",serves:2,ingredients:[],steps:[],rows:[],notes:"",source:""}})}>Add manually</button>
-      </div>
-    </Screen>
-  );
+  // Add / Import modal sheet
+  if (view?.type === "addimport") {
+    return (
+      <Screen>
+        <div style={{background:"#fff",borderBottom:"1px solid #f0ebe3",display:"flex",alignItems:"center",gap:10,padding:"14px 16px",position:"sticky",top:0}}>
+          <button style={S.iconBtn} onClick={() => setView(null)}>←</button>
+          <div style={{fontFamily:"'Lora',serif",fontSize:17,color:"#2a1f14"}}>Add a recipe</div>
+        </div>
+        <div style={{padding:"20px 16px",display:"flex",flexDirection:"column",gap:12}}>
+          <div style={{fontSize:13,color:"#8a7a6a"}}>Paste a URL to import, or add one from scratch.</div>
+          <input style={S.input} placeholder="https://website.com/recipe…" value={importUrl} onChange={e=>setImportUrl(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleImport()} />
+          {importError && <div style={{fontSize:12,color:"#c0392b"}}>{importError}</div>}
+          <button style={{...S.bigBtn, background:importing?"#e8e0d8":"#2a1f14", color:importing?"#8a7a6a":"#fff"}} onClick={handleImport} disabled={importing}>
+            {importing ? "Importing…" : "Import from URL"}
+          </button>
+          <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0"}}>
+            <div style={{flex:1,height:1,background:"#e8e0d4"}}/><span style={{fontSize:12,color:"#aaa"}}>or</span><div style={{flex:1,height:1,background:"#e8e0d4"}}/>
+          </div>
+          <button style={{...S.bigBtn, background:"#f5f0ea", color:"#3a2e24"}}
+            onClick={() => setView({type:"editor", recipe:{id:null,name:"",emoji:"🍽️",category:activeCat,time:"",serves:2,ingredients:[],steps:[],rows:[],notes:"",source:""}})}>
+            Add manually
+          </button>
+        </div>
+      </Screen>
+    );
+  }
 
+  // ── Main tabs ─────────────────────────────────────────────────
   return (
     <Screen>
+      {/* Content */}
       <div style={{flex:1,overflowY:"auto",paddingBottom:72}}>
+
+        {/* ── COOKBOOK ── */}
         {tab === "cookbook" && (
           <>
             <div style={{padding:"16px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
               <div style={{fontFamily:"'Lora',serif",fontSize:20,color:"#2a1f14"}}>Cookbook</div>
               <button style={S.addCircle} onClick={() => setView({type:"addimport"})}>+</button>
             </div>
+            {/* Category pills */}
             <div style={{display:"flex",gap:8,padding:"0 16px 12px",overflowX:"auto"}}>
               {CATEGORIES.map(cat => (
                 <button key={cat.id} onClick={() => setActiveCat(cat.id)}
-                  style={{...S.catPill,background:activeCat===cat.id?cat.color:"#f0ebe5",color:activeCat===cat.id?"#fff":"#5a4a3a",border:`1.5px solid ${activeCat===cat.id?cat.color:"transparent"}`}}>
+                  style={{...S.catPill, background:activeCat===cat.id?cat.color:"#f0ebe5", color:activeCat===cat.id?"#fff":"#5a4a3a", border:`1.5px solid ${activeCat===cat.id?cat.color:"transparent"}`}}>
                   {cat.emoji} {cat.label}
                 </button>
               ))}
             </div>
+            {/* Recipe list */}
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:8}}>
-              {catRecipes.length === 0 && <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}><div style={{fontSize:36,marginBottom:8}}>📂</div>No {getCat(activeCat).label.toLowerCase()} yet</div>}
+              {catRecipes.length === 0 && (
+                <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}>
+                  <div style={{fontSize:36,marginBottom:8}}>📂</div>
+                  No {getCat(activeCat).label.toLowerCase()} yet
+                </div>
+              )}
               {catRecipes.map(rec => {
                 const cat = getCat(rec.category);
                 const inPlan = (plan||[]).includes(rec.id);
@@ -438,7 +579,9 @@ export default function App() {
                     <span style={{fontSize:26,flexShrink:0}}>{rec.emoji}</span>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontFamily:"'Lora',serif",fontSize:14,color:"#2a1f14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{rec.name}</div>
-                      <div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{rec.category!=="spice-blends"&&rec.category!=="meat-times"?rec.time:""}</div>
+                      <div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>
+                        {rec.category!=="spice-blends"&&rec.category!=="meat-times" ? `${rec.time} · serves ${rec.serves}` : ""}
+                      </div>
                     </div>
                     {inPlan && <span style={{fontSize:11,color:cat.color,fontWeight:600,background:cat.bg,padding:"2px 8px",borderRadius:20,flexShrink:0}}>In plan</span>}
                     <span style={{color:"#ccc",fontSize:18}}>›</span>
@@ -446,23 +589,54 @@ export default function App() {
                 );
               })}
             </div>
+            {/* Backup & settings */}
             <div style={{margin:"24px 16px 0",background:"#fff",borderRadius:14,border:"1px solid #f0ebe3",overflow:"hidden"}}>
-              <div style={{padding:"12px 16px",borderBottom:"1px solid #f0ebe3"}}><div style={{fontSize:12,fontWeight:700,letterSpacing:"0.6px",textTransform:"uppercase",color:"#8a7a6a"}}>Backup & restore</div></div>
+              <div style={{padding:"12px 16px",borderBottom:"1px solid #f0ebe3"}}>
+                <div style={{fontSize:12,fontWeight:700,letterSpacing:"0.6px",textTransform:"uppercase",color:"#8a7a6a"}}>Backup & restore</div>
+              </div>
               <div style={{display:"flex",flexDirection:"column"}}>
-                <button style={S.settingsRow} onClick={exportJSON}><span style={{fontSize:20}}>📥</span><div style={{flex:1}}><div style={{fontSize:14,color:"#2a1f14"}}>Download JSON backup</div><div style={{fontSize:11,color:"#8a7a6a"}}>Full backup of all your recipes & data</div></div><span style={{color:"#ccc"}}>›</span></button>
-                <button style={{...S.settingsRow,borderTop:"1px solid #f5f0ea"}} onClick={exportGoogleDoc}><span style={{fontSize:20}}>📄</span><div style={{flex:1}}><div style={{fontSize:14,color:"#2a1f14"}}>Export as text file</div><div style={{fontSize:11,color:"#8a7a6a"}}>Readable format, upload to Google Docs</div></div><span style={{color:"#ccc"}}>›</span></button>
-                <button style={{...S.settingsRow,borderTop:"1px solid #f5f0ea"}} onClick={() => importRef.current?.click()}><span style={{fontSize:20}}>📤</span><div style={{flex:1}}><div style={{fontSize:14,color:"#2a1f14"}}>Restore from backup</div><div style={{fontSize:11,color:"#8a7a6a"}}>Import a recipe-binder.json file</div></div><span style={{color:"#ccc"}}>›</span></button>
+                <button style={S.settingsRow} onClick={exportJSON}>
+                  <span style={{fontSize:20}}>📥</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,color:"#2a1f14"}}>Download JSON backup</div>
+                    <div style={{fontSize:11,color:"#8a7a6a"}}>Full backup of all your recipes & data</div>
+                  </div>
+                  <span style={{color:"#ccc"}}>›</span>
+                </button>
+                <button style={{...S.settingsRow,borderTop:"1px solid #f5f0ea"}} onClick={exportGoogleDoc}>
+                  <span style={{fontSize:20}}>📄</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,color:"#2a1f14"}}>Export as text file</div>
+                    <div style={{fontSize:11,color:"#8a7a6a"}}>Readable format, upload to Google Docs</div>
+                  </div>
+                  <span style={{color:"#ccc"}}>›</span>
+                </button>
+                <button style={{...S.settingsRow,borderTop:"1px solid #f5f0ea"}} onClick={() => importRef.current?.click()}>
+                  <span style={{fontSize:20}}>📤</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,color:"#2a1f14"}}>Restore from backup</div>
+                    <div style={{fontSize:11,color:"#8a7a6a"}}>Import a recipe-binder.json file</div>
+                  </div>
+                  <span style={{color:"#ccc"}}>›</span>
+                </button>
                 <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={handleImportJSON} />
               </div>
             </div>
+            {/* Reset */}
             <div style={{padding:"16px 16px 8px",display:"flex",justifyContent:"center"}}>
               {!confirmReset
                 ? <button style={{fontSize:11,color:"#ccc",background:"none",border:"none",cursor:"pointer"}} onClick={()=>setConfirmReset(true)}>↺ Reset to defaults</button>
-                : <div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{fontSize:12,color:"#8a7a6a"}}>Wipe & reload?</span><button style={{...S.pill,background:"#c0392b",color:"#fff",border:"none"}} onClick={()=>{saveData(STORAGE_KEYS.recipes,[]);setRecipes([]);setConfirmReset(false);}}>Yes</button><button style={{...S.pill,background:"#f0ebe5",color:"#5a4a3a",border:"none"}} onClick={()=>setConfirmReset(false)}>No</button></div>
+                : <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    <span style={{fontSize:12,color:"#8a7a6a"}}>Wipe & reload?</span>
+                    <button style={{...S.pill,background:"#c0392b",color:"#fff",border:"none"}} onClick={()=>{saveData(STORAGE_KEYS.recipes,SEED_RECIPES);setRecipes(SEED_RECIPES);setConfirmReset(false);}}>Yes</button>
+                    <button style={{...S.pill,background:"#f0ebe5",color:"#5a4a3a",border:"none"}} onClick={()=>setConfirmReset(false)}>No</button>
+                  </div>
               }
             </div>
           </>
         )}
+
+        {/* ── PLAN ── */}
         {tab === "plan" && (
           <>
             <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -473,22 +647,33 @@ export default function App() {
               </div>
             </div>
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:8}}>
-              {(plan||[]).length===0 && <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}><div style={{fontSize:36,marginBottom:8}}>📅</div>No meals planned yet</div>}
+              {(plan||[]).length===0 && (
+                <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}>
+                  <div style={{fontSize:36,marginBottom:8}}>📅</div>
+                  No meals planned yet
+                </div>
+              )}
               {(plan||[]).map((recId,i) => {
                 const rec = recipes.find(r=>r.id===recId);
                 if (!rec) return null;
                 const cat = getCat(rec.category);
                 return (
-                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#fff",borderRadius:14,border:"1px solid #f0ebe3",borderLeft:`4px solid ${cat.color}`}}>
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"14px",background:"#fff",borderRadius:14,border:"1px solid #f0ebe3",borderLeft:`4px solid ${cat.color}`,cursor:"pointer"}}
+                    onClick={()=>setView({type:"recipe",id:rec.id})}>
                     <span style={{fontSize:24}}>{rec.emoji}</span>
-                    <div style={{flex:1,minWidth:0}}><div style={{fontFamily:"'Lora',serif",fontSize:14,color:"#2a1f14"}}>{rec.name}</div><div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{cat.label}{rec.time&&rec.category!=="meat-times"?` · ${rec.time}`:""}</div></div>
-                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:22,padding:"0 4px",lineHeight:1}} onClick={()=>setPlan(p=>p.filter((_,j)=>j!==i))}>×</button>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontFamily:"'Lora',serif",fontSize:14,color:"#2a1f14"}}>{rec.name}</div>
+                      <div style={{fontSize:11,color:"#8a7a6a",marginTop:2}}>{cat.label}{rec.time&&rec.category!=="meat-times"?` · ${rec.time}`:""}</div>
+                    </div>
+                    <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:22,padding:"0 4px",lineHeight:1}} onClick={e=>{e.stopPropagation();setPlan(p=>p.filter((_,j)=>j!==i))}}>×</button>
                   </div>
                 );
               })}
             </div>
           </>
         )}
+
+        {/* ── Plan picker ── */}
         {tab === "plan" && view?.type === "planpicker" && (
           <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:50,display:"flex",alignItems:"flex-end"}} onClick={()=>setView(null)}>
             <div style={{background:"#faf7f3",borderRadius:"20px 20px 0 0",width:"100%",maxHeight:"80vh",overflow:"auto",padding:"16px"}} onClick={e=>e.stopPropagation()}>
@@ -514,6 +699,8 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* ── SHOPPING ── */}
         {tab === "shopping" && (
           <>
             <div style={{padding:"16px 16px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -521,39 +708,39 @@ export default function App() {
               {(shopItems.length>0||(extraItems||[]).length>0) && (
                 <div style={{display:"flex",gap:8}}>
                   <button style={{...S.pill,color:"#8a7a6a",border:"1px solid #e0d8ce"}} onClick={()=>{
-                    const lines = [];
-                    shopByCategory.forEach(cat => {
+                    const lines: string[] = [];
+                    shopByCategory.forEach((cat: any) => {
                       if (!cat.items.length) return;
                       lines.push(`${cat.emoji} ${cat.label}`);
-                      cat.items.forEach(item => {
-                        let amountStr = "";
+                      cat.items.forEach((item: any) => {
+                        let amountStr = '';
                         if (item.sources.length > 1) {
-                          const srcAmounts = item.sources.map(srcId => {
-                            const rec = recipes.find(r => r.id === srcId);
+                          const srcAmounts = item.sources.map((srcId: string) => {
+                            const rec = recipes.find((r: any) => r.id === srcId);
                             if (!rec) return item.amount;
-                            const ing = rec.ingredients.find(i => cleanIngredient(i.item).toLowerCase() === item.item.toLowerCase());
+                            const ing = rec.ingredients.find((i: any) => cleanIngredient(i.item).toLowerCase() === item.item.toLowerCase());
                             return ing ? ing.amount : item.amount;
                           });
-                          const allSame = srcAmounts.every(a => a === srcAmounts[0]);
+                          const allSame = srcAmounts.every((a: string) => a === srcAmounts[0]);
                           const hasMeasure = srcAmounts[0] && /\d/.test(srcAmounts[0]) && /g|kg|ml|l|cup|tsp|tbs|tbsp|oz|lb/.test(srcAmounts[0]);
                           if (allSame && srcAmounts[0] && hasMeasure) {
                             amountStr = `  ${item.sources.length} x ${srcAmounts[0]}`;
                           } else {
-                            amountStr = item.amount ? `  ${item.amount}` : "";
+                            amountStr = item.amount ? `  ${item.amount}` : '';
                           }
                         } else if (item.amount) {
                           amountStr = `  ${item.amount}`;
                         }
                         lines.push(`  • ${item.item}${amountStr}`);
                       });
-                      lines.push("");
+                      lines.push('');
                     });
                     if ((extraItems||[]).length) {
-                      lines.push("✏️ Other");
-                      extraItems.forEach(item => lines.push(`  • ${item.name}${item.amount ? "  " + item.amount : ""}`));
+                      lines.push('✏️ Other');
+                      extraItems.forEach((item: any) => lines.push(`  • ${item.name}${item.amount ? '  ' + item.amount : ''}`));
                     }
-                    navigator.clipboard.writeText(lines.join("\n")).then(()=>setCopied(true)).then(()=>setTimeout(()=>setCopied(false),2000));
-                  }}>{copied ? "✓ Copied!" : "📋 Copy"}</button>
+                    navigator.clipboard.writeText(lines.join('\n')).then(()=>setCopied(true)).then(()=>setTimeout(()=>setCopied(false),2000));
+                  }}>{copied ? '✓ Copied!' : '📋 Copy'}</button>
                   <button style={{...S.pill,color:"#8a7a6a",border:"1px solid #e0d8ce"}} onClick={()=>setCheckedItems({})}>Clear ticks</button>
                 </div>
               )}
@@ -561,7 +748,8 @@ export default function App() {
             <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:0}}>
               {shopItems.length===0 && (extraItems||[]).length===0 && (
                 <div style={{textAlign:"center",padding:"48px 0",color:"#8a7a6a",fontSize:14}}>
-                  <div style={{fontSize:36,marginBottom:8}}>🛒</div>Add meals to your plan first
+                  <div style={{fontSize:36,marginBottom:8}}>🛒</div>
+                  Add meals to your plan first
                 </div>
               )}
               {shopByCategory.map(cat => (
@@ -570,17 +758,17 @@ export default function App() {
                     <span>{cat.emoji}</span>{cat.label}
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {cat.items.map((item,i) => {
+                    {cat.items.map((item: any,i: number) => {
                       const k = `r${cat.id}${i}`;
                       return (
                         <div key={k} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#fff",borderRadius:12,border:"1px solid #f0ebe3",cursor:"pointer",opacity:checkedItems[k]?0.4:1}}
-                          onClick={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))}>
+                          onClick={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))}>
                           <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>{}} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} />
                           <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none"}}>{item.item}</span>
                           <span style={{fontSize:12,color:"#8a7a6a",marginRight:6}}>{item.amount}</span>
                           <div style={{display:"flex",gap:3}}>
-                            {item.sources.map((srcId,j) => {
-                              const srcRec = recipes.find(r=>r.id===srcId);
+                            {item.sources.map((srcId: string,j: number) => {
+                              const srcRec = recipes.find((r: any)=>r.id===srcId);
                               const c = srcRec ? getCat(srcRec.category) : {color:"#aaa"};
                               return <div key={j} style={{width:7,height:7,borderRadius:"50%",background:c.color}} title={srcRec?.name||""} />;
                             })}
@@ -597,35 +785,40 @@ export default function App() {
                     <span>✏️</span>Added manually
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                    {(extraItems||[]).map(item => {
+                    {(extraItems||[]).map((item: any) => {
                       const k = "e"+item.id;
                       return (
                         <div key={k} style={{display:"flex",alignItems:"center",gap:12,padding:"13px 14px",background:"#fff",borderRadius:12,border:"1px solid #f0ebe3",opacity:checkedItems[k]?0.4:1}}>
-                          <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} onClick={e=>e.stopPropagation()} />
-                          <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none",cursor:"pointer"}} onClick={()=>setCheckedItems(p=>({...p,[k]:!p[k]}))}>{item.name}</span>
+                          <input type="checkbox" checked={!!checkedItems[k]} onChange={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))} style={{accentColor:"#2aaa8a",width:18,height:18,flexShrink:0}} onClick={(e: any)=>e.stopPropagation()} />
+                          <span style={{flex:1,fontSize:14,color:"#2a1f14",textDecoration:checkedItems[k]?"line-through":"none",cursor:"pointer"}} onClick={()=>setCheckedItems((p: any)=>({...p,[k]:!p[k]}))}>{item.name}</span>
                           <span style={{fontSize:12,color:"#8a7a6a",marginRight:4}}>{item.amount}</span>
-                          <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:0,lineHeight:1}} onClick={()=>setExtraItems(p=>p.filter(e=>e.id!==item.id))}>×</button>
+                          <button style={{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:0,lineHeight:1}} onClick={()=>setExtraItems((p: any)=>p.filter((e: any)=>e.id!==item.id))}>×</button>
                         </div>
                       );
                     })}
                   </div>
                 </div>
               )}
+              {/* Add extra */}
               <div style={{display:"flex",gap:8,marginTop:4,paddingTop:14,borderTop:"1px dashed #e0d8ce"}}>
-                <input ref={extraRef} value={newExtra.name} onChange={e=>setNewExtra(p=>({...p,name:e.target.value}))}
-                  onKeyDown={e=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
+                <input ref={extraRef} value={newExtra.name} onChange={(e: any)=>setNewExtra(p=>({...p,name:e.target.value}))}
+                  onKeyDown={(e: any)=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
                   placeholder="Add item…" style={{...S.input,flex:1}} />
-                <input value={newExtra.amount} onChange={e=>setNewExtra(p=>({...p,amount:e.target.value}))}
-                  onKeyDown={e=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
+                <input value={newExtra.amount} onChange={(e: any)=>setNewExtra(p=>({...p,amount:e.target.value}))}
+                  onKeyDown={(e: any)=>{if(e.key==="Enter"&&newExtra.name.trim()){setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});extraRef.current?.focus();}}}
                   placeholder="Qty" style={{...S.input,width:64}} />
                 <button style={{...S.pill,background:newExtra.name.trim()?"#2aaa8a":"#e8e0d8",color:newExtra.name.trim()?"#fff":"#bbb",border:"none",padding:"0 16px",flexShrink:0}}
                   disabled={!newExtra.name.trim()}
-                  onClick={()=>{if(!newExtra.name.trim())return;setExtraItems(p=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});}}>Add</button>
+                  onClick={()=>{if(!newExtra.name.trim())return;setExtraItems((p: any)=>[...p,{id:uid(),name:newExtra.name.trim(),amount:newExtra.amount.trim()}]);setNewExtra({name:"",amount:""});}}>
+                  Add
+                </button>
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Bottom nav */}
       <div style={{position:"fixed",bottom:0,left:0,right:0,background:"#fff",borderTop:"1px solid #f0ebe3",display:"flex",zIndex:20,paddingBottom:"env(safe-area-inset-bottom)"}}>
         {[{id:"cookbook",label:"Cookbook",icon:"📖"},{id:"plan",label:"Plan",icon:"📅"},{id:"shopping",label:"Shopping",icon:"🛒"}].map(t => (
           <button key={t.id} style={{flex:1,padding:"10px 0 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}
@@ -640,10 +833,16 @@ export default function App() {
   );
 }
 
+// ── Screen wrapper ────────────────────────────────────────────────
 function Screen({children}) {
-  return <div style={{minHeight:"100vh",background:"#faf7f3",fontFamily:"'Crimson Pro',serif",display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",position:"relative"}}>{children}</div>;
+  return (
+    <div style={{minHeight:"100vh",background:"#faf7f3",fontFamily:"'Crimson Pro',serif",display:"flex",flexDirection:"column",maxWidth:480,margin:"0 auto",position:"relative"}}>
+      {children}
+    </div>
+  );
 }
 
+// ── Recipe Editor ─────────────────────────────────────────────────
 function RecipeEditor({recipe, onSave, onCancel}) {
   const [form, setForm] = useState({
     id:recipe.id||null, name:recipe.name||"", emoji:recipe.emoji||"🍽️",
@@ -678,15 +877,20 @@ function RecipeEditor({recipe, onSave, onCancel}) {
         <button style={{...S.pill,background:cat.color,color:"#fff",border:"none"}} onClick={()=>onSave(form)}>Save</button>
       </div>
       <div style={{padding:"16px",display:"flex",flexDirection:"column",gap:16,paddingBottom:40}}>
+        {/* Emoji + Name */}
         <div style={{display:"flex",gap:10,alignItems:"center",position:"relative"}}>
-          <button onClick={()=>setShowPicker(p=>!p)} style={{width:52,height:52,fontSize:26,background:"#fff",border:"1px solid #e0d8ce",borderRadius:12,cursor:"pointer",flexShrink:0}}>{form.emoji}</button>
+          <button onClick={()=>setShowPicker(p=>!p)} style={{width:52,height:52,fontSize:26,background:"#fff",border:"1px solid #e0d8ce",borderRadius:12,cursor:"pointer",flexShrink:0}}>
+            {form.emoji}
+          </button>
           {showPicker && (
             <div style={{position:"absolute",top:58,left:0,zIndex:100,background:"#fff",border:"1px solid #e0d8ce",borderRadius:16,boxShadow:"0 8px 32px rgba(0,0,0,0.12)",width:280,maxHeight:300,overflowY:"auto",padding:12}}>
               {EMOJI_GROUPS.map(g=>(
                 <div key={g.label} style={{marginBottom:10}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#8a7a6a",textTransform:"uppercase",letterSpacing:"0.5px",marginBottom:6}}>{g.label}</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                    {g.emojis.map(e=><button key={e} onClick={()=>{f("emoji",e);setShowPicker(false);}} style={{width:34,height:34,fontSize:20,background:form.emoji===e?"#f0ebe5":"transparent",border:form.emoji===e?"1px solid #c8b89a":"1px solid transparent",borderRadius:8,cursor:"pointer"}}>{e}</button>)}
+                    {g.emojis.map(e=>(
+                      <button key={e} onClick={()=>{f("emoji",e);setShowPicker(false);}} style={{width:34,height:34,fontSize:20,background:form.emoji===e?"#f0ebe5":"transparent",border:form.emoji===e?"1px solid #c8b89a":"1px solid transparent",borderRadius:8,cursor:"pointer"}}>{e}</button>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -697,11 +901,18 @@ function RecipeEditor({recipe, onSave, onCancel}) {
           )}
           <input value={form.name} onChange={e=>f("name",e.target.value)} placeholder="Recipe name" style={{...S.input,flex:1,fontFamily:"'Lora',serif",fontSize:16}}/>
         </div>
+        {/* Category + time + serves */}
         <div style={{display:"flex",gap:8}}>
-          <div style={{flex:1.5}}><div style={S.fieldLabel}>Category</div><select value={form.category} onChange={e=>f("category",e.target.value)} style={S.input}>{CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></div>
+          <div style={{flex:1.5}}>
+            <div style={S.fieldLabel}>Category</div>
+            <select value={form.category} onChange={e=>f("category",e.target.value)} style={S.input}>
+              {CATEGORIES.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </div>
           {!isMeat&&!isSpice&&<div style={{flex:1}}><div style={S.fieldLabel}>Time</div><input value={form.time} onChange={e=>f("time",e.target.value)} placeholder="30 min" style={S.input}/></div>}
           {!isMeat&&!isSpice&&<div style={{width:64}}><div style={S.fieldLabel}>Serves</div><input type="number" min={1} value={form.serves} onChange={e=>f("serves",+e.target.value)} style={S.input}/></div>}
         </div>
+        {/* Ingredients / rows */}
         {isMeat ? (
           <div>
             <div style={S.secLabel}>Time & temp rows</div>
@@ -734,6 +945,7 @@ function RecipeEditor({recipe, onSave, onCancel}) {
             <button style={S.ghostBtn} onClick={addIng}>+ Add ingredient</button>
           </div>
         )}
+        {/* Method */}
         {!isSpice&&!isMeat&&(
           <div>
             <div style={S.secLabel}>Method</div>
@@ -747,22 +959,26 @@ function RecipeEditor({recipe, onSave, onCancel}) {
             <button style={S.ghostBtn} onClick={addStep}>+ Add step</button>
           </div>
         )}
-        <div><div style={S.fieldLabel}>Notes</div><textarea value={form.notes} onChange={e=>f("notes",e.target.value)} placeholder="Tips or variations…" style={{...S.input,width:"100%",minHeight:70,resize:"vertical"}}/></div>
+        <div>
+          <div style={S.fieldLabel}>Notes</div>
+          <textarea value={form.notes} onChange={e=>f("notes",e.target.value)} placeholder="Tips or variations…" style={{...S.input,width:"100%",minHeight:70,resize:"vertical"}}/>
+        </div>
       </div>
     </div>
   );
 }
 
-const S: any = {
-  iconBtn:     {background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#8a7a6a",padding:"4px 8px",lineHeight:1},
-  pill:        {padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"},
-  catPill:     {padding:"7px 14px",borderRadius:20,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0},
-  addCircle:   {width:34,height:34,borderRadius:"50%",background:"#2a1f14",color:"#fff",border:"none",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1},
-  bigBtn:      {padding:"14px",borderRadius:12,fontSize:14,fontWeight:500,cursor:"pointer",border:"none",fontFamily:"inherit",width:"100%"},
-  input:       {padding:"10px 12px",borderRadius:10,border:"1px solid #e0d8ce",fontSize:13,fontFamily:"inherit",background:"#faf7f3",color:"#3a2e24",width:"100%",outline:"none",boxSizing:"border-box"},
-  secLabel:    {fontSize:11,fontWeight:700,letterSpacing:"0.8px",textTransform:"uppercase",color:"#8a7a6a",marginBottom:8},
-  fieldLabel:  {fontSize:11,color:"#8a7a6a",marginBottom:4,fontWeight:500},
-  removeBtn:   {background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:"0 4px",lineHeight:1,flexShrink:0},
+// ── Shared styles ─────────────────────────────────────────────────
+const S = {
+  iconBtn:  {background:"none",border:"none",cursor:"pointer",fontSize:20,color:"#8a7a6a",padding:"4px 8px",lineHeight:1},
+  pill:     {padding:"6px 14px",borderRadius:20,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"},
+  catPill:  {padding:"7px 14px",borderRadius:20,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",flexShrink:0},
+  addCircle:{width:34,height:34,borderRadius:"50%",background:"#2a1f14",color:"#fff",border:"none",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1},
+  bigBtn:   {padding:"14px",borderRadius:12,fontSize:14,fontWeight:500,cursor:"pointer",border:"none",fontFamily:"inherit",width:"100%"},
+  input:    {padding:"10px 12px",borderRadius:10,border:"1px solid #e0d8ce",fontSize:13,fontFamily:"inherit",background:"#faf7f3",color:"#3a2e24",width:"100%",outline:"none",boxSizing:"border-box"},
+  secLabel: {fontSize:11,fontWeight:700,letterSpacing:"0.8px",textTransform:"uppercase",color:"#8a7a6a",marginBottom:8},
+  fieldLabel:{fontSize:11,color:"#8a7a6a",marginBottom:4,fontWeight:500},
+  removeBtn:{background:"none",border:"none",cursor:"pointer",color:"#ccc",fontSize:20,padding:"0 4px",lineHeight:1,flexShrink:0},
   settingsRow: {display:"flex",alignItems:"center",gap:12,padding:"14px 16px",background:"none",border:"none",cursor:"pointer",fontFamily:"inherit",width:"100%",textAlign:"left"},
-  ghostBtn:    {fontSize:13,color:"#8a7a6a",background:"none",border:"none",cursor:"pointer",padding:"4px 0",fontFamily:"inherit"},
+  ghostBtn: {fontSize:13,color:"#8a7a6a",background:"none",border:"none",cursor:"pointer",padding:"4px 0",fontFamily:"inherit"},
 };
